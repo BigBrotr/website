@@ -28,23 +28,29 @@ The Finder queries public APIs that aggregate relay information. API endpoints a
 
 ```yaml
 # config/services/finder.yaml
-sleep_interval: 300  # seconds between cycles
+interval: 300  # seconds between cycles
 
-clearnet:
-  timeout: 30
-  max_concurrent: 50
+concurrency:
+  max_parallel_api: 5
+  max_parallel_events: 10
 
-tor:
-  timeout: 60
-  max_concurrent: 10
-  proxy_url: socks5://tor-proxy:9050
+events:
+  enabled: true
+  batch_size: 1000
 
-apis:
-  - url: https://api.nostr.watch/v1/online
-    jmespath: "[].url"
-  - url: https://api.example.com/relays
-    jmespath: "data[].relay_url"
+api:
+  enabled: true
+  delay_between_requests: 1.0
+  verify_ssl: true
+  max_response_size: 5242880
+  sources:
+    - url: https://api.nostr.watch/v1/online
+      jmespath: "[*]"
+    - url: https://api.nostr.watch/v1/public
+      jmespath: "[*]"
 ```
+
+The Finder does not use per-network configuration since it queries APIs over HTTP and scans events from the local database.
 
 ## Usage
 
@@ -61,7 +67,7 @@ python -m bigbrotr finder --log-level DEBUG
 
 ## Metrics
 
-The Finder exposes Prometheus metrics on port 8001:
+When metrics are enabled in the service configuration, the Finder exposes Prometheus metrics:
 
 - `service_counter{name="candidates_found"}` — total new relay URLs discovered
 - `service_counter{name="apis_queried"}` — total API requests made

@@ -21,9 +21,9 @@ Before the Finder can discover relays from NIP-65 events and APIs, there must be
 
 ```yaml
 # config/services/seeder.yaml
-seed_files:
-  - seeds/relays.txt
-  - seeds/additional.txt
+seed:
+  file_path: static/seed_relays.txt
+  to_validate: true
 ```
 
 ## Usage

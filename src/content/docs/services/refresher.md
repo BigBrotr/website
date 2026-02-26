@@ -39,10 +39,24 @@ The `CONCURRENTLY` keyword ensures that reads on the materialized view are not b
 
 ```yaml
 # config/services/refresher.yaml
-sleep_interval: 3600  # seconds between refresh cycles (1 hour)
+interval: 3600  # seconds between refresh cycles (1 hour)
+
+refresh:
+  views:
+    - relay_metadata_latest
+    - event_stats
+    - relay_stats
+    - kind_counts
+    - kind_counts_by_relay
+    - pubkey_counts
+    - pubkey_counts_by_relay
+    - network_stats
+    - event_daily_counts
+    - relay_software_counts
+    - supported_nip_counts
 ```
 
-Refresh timeouts are controlled by the core `TimeoutsConfig.refresh` setting in the Brotr configuration.
+The view list can be customized to refresh only a subset. Refresh timeouts are controlled by the core `TimeoutsConfig.refresh` setting in the Brotr configuration.
 
 ## Usage
 

@@ -57,7 +57,7 @@ Services that perform network I/O (Finder, Validator, Monitor, Synchronizer) sup
 | I2P | `ws://abc.b32.i2p` | SOCKS5 |
 | Lokinet | `ws://abc.loki` | SOCKS5 |
 
-Each network type has its own `ClearnetConfig`, `TorConfig`, `I2pConfig`, or `LokiConfig` with independent timeout, proxy URL, and max concurrent task settings.
+Each network type has its own `ClearnetConfig`, `TorConfig`, `I2pConfig`, or `LokiConfig` with independent `timeout`, `proxy_url`, and `max_tasks` settings.
 
 ## Shared Infrastructure
 

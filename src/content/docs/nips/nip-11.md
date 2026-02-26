@@ -32,7 +32,7 @@ The `Nip11` class in `bigbrotr.nips.nip11` handles:
 
 1. **Fetching** — HTTP GET with `Accept: application/nostr+json` header. Handles timeouts, SSL errors, connection failures, and non-JSON responses.
 2. **Parsing** — JSON parsing with field validation. Extracts software name and version from the `software` URL.
-3. **Storage** — Produces a `Metadata` object with `MetadataType.NIP11` containing the parsed data.
+3. **Storage** — Produces a `Metadata` object with `MetadataType.NIP11_INFO` containing the parsed data.
 
 ### Error Handling
 
@@ -55,7 +55,7 @@ The `software` field in NIP-11 documents is typically a URL like `git+https://gi
 ## Data Flow
 
 ```
-Relay → HTTP GET → NIP-11 JSON → Parse → Metadata(type=NIP11) → relay_metadata_insert_cascade
+Relay → HTTP GET → NIP-11 JSON → Parse → Metadata(type=NIP11_INFO) → relay_metadata_insert_cascade
 ```
 
 The NIP-11 metadata is stored content-addressed: if a relay's NIP-11 document hasn't changed since the last check, the same SHA-256 hash is produced and no duplicate metadata row is created. Only the `relay_metadata` junction row is updated with the new `generated_at` timestamp.

@@ -16,8 +16,7 @@ pool:
   max_inactive_connection_lifetime: 300
 
 batch:
-  size: 100
-  max_concurrent: 50
+  max_size: 1000
 
 timeouts:
   query: 60       # seconds for individual queries
@@ -41,12 +40,11 @@ The pool includes automatic retry with exponential backoff for transient connect
 
 ## Batch Configuration
 
-Controls how services process work in batches:
+Controls batch sizes for database operations:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `size` | `100` | Number of items per batch |
-| `max_concurrent` | `50` | Maximum concurrent operations per batch |
+| `max_size` | `1000` | Maximum items per batch operation (1–100,000) |
 
 ## Timeout Configuration
 

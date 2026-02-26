@@ -83,7 +83,8 @@ docker compose exec postgres psql -U admin -d bigbrotr
 SELECT count(*) FROM relay;
 
 # Check service states
-SELECT service, state, updated_at FROM service_state ORDER BY updated_at DESC;
+SELECT service_name, state_type, state_key, state_value, updated_at
+FROM service_state ORDER BY updated_at DESC;
 
 # View materialized view stats
 SELECT * FROM relay_stats LIMIT 5;
@@ -91,14 +92,18 @@ SELECT * FROM relay_stats LIMIT 5;
 
 ## 6. Monitor
 
-Prometheus is available at `http://localhost:9090`. Each service exposes metrics on its configured port:
+Prometheus is available at `http://localhost:9090`. Each service can expose Prometheus metrics when enabled in its configuration:
 
-| Service | Metrics Port |
-|---------|-------------|
-| Finder | 8001 |
-| Validator | 8002 |
-| Monitor | 8003 |
-| Synchronizer | 8004 |
+```yaml
+# In any service config
+metrics:
+  enabled: true
+  port: 8000     # default port
+  host: 127.0.0.1
+  path: /metrics
+```
+
+Metrics are disabled by default. When enabled, each service exposes a `/metrics` endpoint on the configured port (default 8000). Assign different ports if running multiple services on the same host.
 
 ## Next Steps
 

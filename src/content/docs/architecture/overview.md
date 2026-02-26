@@ -21,7 +21,7 @@ BigBrotr's architecture follows a **diamond DAG** (Directed Acyclic Graph) depen
 |-------|----------|---------------|
 | Top | `services` | Business logic. Six independent services that orchestrate discovery, monitoring, and archiving. |
 | Middle | `core` | Connection pool, database facade, base service, logging, metrics. |
-| Middle | `nips` | Protocol-aware I/O. NIP-11 relay information, NIP-66 health monitoring. Depends on core, utils, and models. |
+| Middle | `nips` | Protocol-aware I/O. NIP-11 relay information, NIP-66 health monitoring. Depends on utils and models. |
 | Middle | `utils` | Network primitives. DNS resolution, Nostr key management, WebSocket/HTTP transport, SOCKS5 proxy. |
 | Bottom | `models` | Pure frozen dataclasses. Zero I/O, zero `bigbrotr` imports. Uses only stdlib. |
 
@@ -45,11 +45,11 @@ Every model is a frozen dataclass with `__slots__`. Instances are immutable afte
 
 ### Content-Addressed Deduplication
 
-Metadata objects are hashed with SHA-256. Same data always produces the same hash. The composite primary key `(id, type)` means deduplication operates within each metadata type. This eliminates duplicates at the data layer without application-level coordination.
+Metadata objects are hashed with SHA-256. Same data always produces the same hash. The composite primary key `(id, metadata_type)` means deduplication operates within each metadata type. The type is NOT included in the hash — deduplication is per-type. This eliminates duplicates at the data layer without application-level coordination.
 
 ### Database as Integration Point
 
-The PostgreSQL database is the single source of truth and the only communication channel between services. All mutations go through stored procedures with bulk array parameters. Materialized views provide pre-computed analytics. This design is simple, reliable, and eliminates distributed system failure modes.
+The PostgreSQL database is the single source of truth and the only communication channel between services. All mutations go through stored functions with bulk array parameters. Materialized views provide pre-computed analytics. This design is simple, reliable, and eliminates distributed system failure modes.
 
 ### Never Trust Stored Data
 
@@ -71,7 +71,7 @@ A complete BigBrotr deployment consists of:
 │            (transaction pooling)                   │
 ├────────────────────────────────────────────────────┤
 │                   PostgreSQL                       │
-│   6 tables · 25 procedures · 11 materialized views │
+│    6 tables · 25 functions · 11 materialized views  │
 └────────────────────────────────────────────────────┘
        ▲                   ▲                   ▲
        │                   │                   │

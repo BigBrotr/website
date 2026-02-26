@@ -33,17 +33,28 @@ Events are stored by their Nostr event ID (a SHA-256 hash). If the same event is
 
 ```yaml
 # config/services/synchronizer.yaml
-sleep_interval: 300  # seconds between cycles
-batch_size: 50       # relays per cycle
+interval: 300  # seconds between cycles
 
-clearnet:
-  timeout: 30
-  max_concurrent: 25
+filter:
+  limit: 500   # max events per relay request
 
-tor:
-  timeout: 90
-  max_concurrent: 5
-  proxy_url: socks5://tor-proxy:9050
+time_range:
+  use_relay_state: true
+  lookback_seconds: 86400
+
+networks:
+  clearnet:
+    timeout: 10
+    max_tasks: 25
+  tor:
+    enabled: true
+    timeout: 30
+    max_tasks: 5
+    proxy_url: socks5://tor:9050
+
+timeouts:
+  relay_clearnet: 1800
+  relay_tor: 3600
 ```
 
 ## Usage
@@ -58,7 +69,7 @@ python -m bigbrotr synchronizer --once
 
 ## Metrics
 
-The Synchronizer exposes Prometheus metrics on port 8004:
+When metrics are enabled, the Synchronizer exposes Prometheus metrics:
 
 - `service_counter{name="events_collected"}` — total events stored
 - `service_counter{name="relays_synced"}` — total relay sync operations

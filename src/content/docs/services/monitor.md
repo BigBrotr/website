@@ -55,26 +55,34 @@ These events are broadcast to configured relays, allowing other Nostr clients to
 
 ```yaml
 # config/services/monitor.yaml
-sleep_interval: 600  # seconds between cycles
-batch_size: 200
+interval: 600  # seconds between cycles
 
-clearnet:
-  timeout: 30
-  max_concurrent: 100
+processing:
+  chunk_size: 200
+  allow_insecure: false
+  compute:
+    nip11_info: true
+    nip66_rtt: true
+    nip66_ssl: true
+    nip66_geo: true
+    nip66_net: true
+    nip66_dns: true
+    nip66_http: true
 
-tor:
-  timeout: 90
-  max_concurrent: 10
-  proxy_url: socks5://tor-proxy:9050
+networks:
+  clearnet:
+    timeout: 30
+    max_tasks: 100
+  tor:
+    enabled: true
+    timeout: 90
+    max_tasks: 10
+    proxy_url: socks5://tor:9050
 
-# Nostr key configuration for event publishing (optional)
-keys:
-  private_key_env: NOSTR_PRIVATE_KEY
-
-# GeoIP database paths
-geoip:
-  city_db: /data/geoip/GeoLite2-City.mmdb
-  asn_db: /data/geoip/GeoLite2-ASN.mmdb
+geo:
+  city_database_path: static/GeoLite2-City.mmdb
+  asn_database_path: static/GeoLite2-ASN.mmdb
+  geohash_precision: 9
 ```
 
 ## Usage

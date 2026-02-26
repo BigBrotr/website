@@ -13,7 +13,7 @@ The `Nip66` class in `bigbrotr.nips.nip66` runs independent health tests, each p
 
 Opens a WebSocket connection to the relay and measures the round-trip time in milliseconds. This indicates the relay's responsiveness.
 
-| Metadata Type | `OPEN_TIMESTAMP` |
+| MetadataType | `NIP66_RTT` |
 |---|---|
 | Measures | WebSocket handshake duration (ms) |
 | Network support | All (clearnet, Tor, I2P, Lokinet) |
@@ -22,7 +22,7 @@ Opens a WebSocket connection to the relay and measures the round-trip time in mi
 
 Inspects the relay's SSL/TLS certificate for validity, expiration, and issuer information.
 
-| Metadata Type | `SSL` |
+| MetadataType | `NIP66_SSL` |
 |---|---|
 | Measures | Certificate validity, expiration date, issuer chain |
 | Network support | Clearnet only (overlay networks use different transport) |
@@ -31,7 +31,7 @@ Inspects the relay's SSL/TLS certificate for validity, expiration, and issuer in
 
 Resolves the relay's hostname and measures DNS resolution time.
 
-| Metadata Type | `DNS` |
+| MetadataType | `NIP66_DNS` |
 |---|---|
 | Measures | Resolution time, IP addresses, DNSSEC status |
 | Network support | Clearnet only |
@@ -40,7 +40,7 @@ Resolves the relay's hostname and measures DNS resolution time.
 
 Looks up the relay's IP address in MaxMind GeoIP databases to determine geographic location.
 
-| Metadata Type | `GEOLOCATION` |
+| MetadataType | `NIP66_GEO` |
 |---|---|
 | Measures | Country, city, ASN, latitude/longitude |
 | Dependencies | MaxMind GeoLite2-City.mmdb |
@@ -49,7 +49,7 @@ Looks up the relay's IP address in MaxMind GeoIP databases to determine geograph
 
 Identifies the relay's Autonomous System (AS) number, ISP, and network prefix.
 
-| Metadata Type | `NETWORK` |
+| MetadataType | `NIP66_NET` |
 |---|---|
 | Measures | AS number, ISP name, network prefix |
 | Dependencies | MaxMind GeoLite2-ASN.mmdb |
@@ -58,7 +58,7 @@ Identifies the relay's Autonomous System (AS) number, ISP, and network prefix.
 
 Sends an HTTP request to the relay's URL and records the response status, headers, and redirect chain.
 
-| Metadata Type | `RELAY_COUNTRIES` |
+| MetadataType | `NIP66_HTTP` |
 |---|---|
 | Measures | HTTP status code, headers, redirects |
 | Network support | All |

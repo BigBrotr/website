@@ -31,11 +31,11 @@ BigBrotr is organized into five packages, each with a single clear responsibilit
 | Module | Contents |
 |--------|----------|
 | `pool.py` | `Pool` — asyncpg connection pool with retry/backoff and health-checked acquisition. `PoolConfig` Pydantic model. |
-| `brotr.py` | `Brotr` — database facade. `_call_procedure()` for stored procedures, generic query methods: `fetch()`, `fetchrow()`, `fetchval()`, `execute()`, `transaction()`. `BrotrConfig` with `BatchConfig` and `TimeoutsConfig`. |
+| `brotr.py` | `Brotr` — database facade. `_call_procedure()` for stored functions, generic query methods: `fetch()`, `fetchrow()`, `fetchval()`, `execute()`, `transaction()`. `BrotrConfig` with `BatchConfig` and `TimeoutsConfig`. |
 | `base_service.py` | `BaseService[ConfigT]` — abstract base class. `run()` cycle, `run_forever()` loop, graceful shutdown. `from_yaml()`/`from_dict()` factory methods. |
 | `logger.py` | `Logger` — structured key=value logging with JSON output mode. `format_kv_pairs()` utility. |
 | `metrics.py` | Prometheus `/metrics` endpoint. Four metric types: `SERVICE_INFO`, `SERVICE_GAUGE`, `SERVICE_COUNTER`, `CYCLE_DURATION_SECONDS`. |
-| `yaml_loader.py` | YAML configuration file loading with environment variable interpolation. |
+| `yaml.py` | YAML configuration file loading with environment variable interpolation. |
 
 **Key patterns:**
 
@@ -45,28 +45,33 @@ BigBrotr is organized into five packages, each with a single clear responsibilit
 
 ## nips
 
-**Protocol-aware I/O.** Each NIP implementation is a "sensor" that produces typed `Metadata` objects.
+**Protocol-aware I/O.** Each NIP implementation is a "sensor" that produces typed `Metadata` objects. The package contains shared base classes and two sub-packages.
 
 | Module | Contents |
 |--------|----------|
-| `nip11.py` | `Nip11` — fetches and parses NIP-11 Relay Information Documents. Produces `MetadataType.NIP11` metadata. Handles JSON parsing, field validation, software/version extraction. |
-| `nip66.py` | `Nip66` — runs six health tests. Produces individual metadata per test type. |
+| `base.py` | Shared base classes for NIP implementations |
+| `event_builders.py` | Nostr event construction for publishing monitoring data |
+| `parsing.py` | Declarative field parsing utilities |
+| `nip11/` | Sub-package: `nip11.py` (main class), `data.py` (data models), `logs.py` (result logging), `info.py` (field extraction) |
+| `nip66/` | Sub-package: `nip66.py` (main class), `data.py`, `logs.py`, plus one module per test: `rtt.py`, `ssl.py`, `dns.py`, `geo.py`, `net.py`, `http.py` |
 
 **NIP-66 health tests:**
 
-| Test | Metadata Type | Measures |
-|------|--------------|----------|
-| RTT | `OPEN_TIMESTAMP` | WebSocket round-trip time in milliseconds |
-| SSL | `SSL` | Certificate validity, expiration, issuer |
-| DNS | `DNS` | Resolution time, IP addresses, DNSSEC |
-| Geo | `GEOLOCATION` | Country, city, ASN, coordinates via GeoIP |
-| Net | `NETWORK` | AS number, ISP name, network prefix |
-| HTTP | `RELAY_COUNTRIES` | HTTP status, headers, redirect chain |
+| Test | MetadataType | Measures |
+|------|-------------|----------|
+| RTT | `NIP66_RTT` | WebSocket round-trip time in milliseconds |
+| SSL | `NIP66_SSL` | Certificate validity, expiration, issuer |
+| DNS | `NIP66_DNS` | Resolution time, IP addresses, DNSSEC |
+| Geo | `NIP66_GEO` | Country, city, ASN, coordinates via GeoIP |
+| Net | `NIP66_NET` | AS number, ISP name, network prefix |
+| HTTP | `NIP66_HTTP` | HTTP status, headers, redirect chain |
+
+NIP-11 produces `MetadataType.NIP11_INFO`.
 
 **Key patterns:**
 
 - Fetch methods never raise exceptions. Always check `logs.success` on the result.
-- Depends on `core` (for `Brotr`), `utils` (for transport), and `models` (for data types).
+- Depends on `utils` (for transport) and `models` (for data types). Does **not** depend on `core`.
 
 ## utils
 
@@ -76,8 +81,10 @@ BigBrotr is organized into five packages, each with a single clear responsibilit
 |--------|----------|
 | `protocol.py` | `create_client()`, `connect_relay()`, `broadcast_events()`, `is_nostr_relay()` — WebSocket client creation and relay connectivity testing. |
 | `transport.py` | `DEFAULT_TIMEOUT`, `InsecureWebSocketTransport` — HTTP/WebSocket transport with SSL fallback and timeout configuration. |
+| `http.py` | Bounded JSON reading and file downloads with size limits. |
 | `dns.py` | DNS resolution utilities for relay URL validation. |
 | `keys.py` | `load_keys_from_env()`, `KeysConfig` Pydantic model — Nostr key management for event signing and publishing. |
+| `parsing.py` | Model parsing utilities for data extraction. |
 
 **Key patterns:**
 

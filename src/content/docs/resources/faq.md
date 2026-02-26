@@ -33,7 +33,7 @@ The database is the single source of truth and the only communication channel. T
 
 ### Why not use an ORM?
 
-BigBrotr uses stored procedures with bulk array parameters for all mutations. This provides precise control over SQL execution, enables batch operations that ORMs typically handle poorly, and keeps the data layer explicit.
+BigBrotr uses stored functions with bulk array parameters for all mutations. This provides precise control over SQL execution, enables batch operations that ORMs typically handle poorly, and keeps the data layer explicit.
 
 ### Why content-addressed metadata?
 

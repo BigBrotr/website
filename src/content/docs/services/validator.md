@@ -24,27 +24,34 @@ Not every URL discovered by the Seeder or Finder is an active Nostr relay. URLs 
 
 ```yaml
 # config/services/validator.yaml
-sleep_interval: 120  # seconds between cycles
-batch_size: 100      # candidates per cycle
+interval: 120  # seconds between cycles
 
-clearnet:
-  timeout: 15
-  max_concurrent: 50
+processing:
+  chunk_size: 100    # candidates per cycle
 
-tor:
-  timeout: 45
-  max_concurrent: 10
-  proxy_url: socks5://tor-proxy:9050
+networks:
+  clearnet:
+    timeout: 15
+    max_tasks: 50
+  tor:
+    enabled: true
+    timeout: 45
+    max_tasks: 10
+    proxy_url: socks5://tor:9050
+  i2p:
+    enabled: true
+    timeout: 60
+    max_tasks: 5
+    proxy_url: socks5://i2p:4447
+  loki:
+    enabled: true
+    timeout: 45
+    max_tasks: 5
+    proxy_url: socks5://lokinet:1080
 
-i2p:
-  timeout: 60
-  max_concurrent: 5
-  proxy_url: socks5://i2p-proxy:4447
-
-loki:
-  timeout: 45
-  max_concurrent: 5
-  proxy_url: socks5://lokinet-proxy:1080
+cleanup:
+  enabled: false
+  max_failures: 100
 ```
 
 ## Usage

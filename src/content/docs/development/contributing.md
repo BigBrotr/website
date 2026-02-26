@@ -102,7 +102,7 @@ The diamond DAG must be maintained. Never import upward:
 - `models` imports only from stdlib
 - `core` imports only from `models`
 - `utils` imports only from `models`
-- `nips` imports from `core`, `utils`, and `models`
+- `nips` imports from `utils` and `models`
 - `services` imports from `core`, `nips`, `utils`, and `models`
 
 ## Pull Requests

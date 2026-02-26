@@ -3,7 +3,7 @@ title: Testing
 description: How to write, run, and organize tests in BigBrotr.
 ---
 
-BigBrotr maintains approximately 2,400 unit tests and 90 integration tests with a minimum 80% branch coverage requirement.
+BigBrotr maintains approximately 2,400 unit tests and 90 integration tests (using testcontainers with PostgreSQL) with a minimum 80% branch coverage requirement.
 
 ## Running Tests
 
@@ -104,7 +104,7 @@ Always mock where the function is used, not where it is defined:
 @patch("bigbrotr.services.validator.is_nostr_relay")
 
 # Wrong: mock at the source module
-@patch("bigbrotr.utils.transport.is_nostr_relay")
+@patch("bigbrotr.utils.protocol.is_nostr_relay")
 ```
 
 ### Root Fixtures
@@ -143,7 +143,7 @@ async def pg_container():
     ...
 ```
 
-These tests verify stored procedures, cascade functions, and materialized views against a real database.
+These tests verify stored functions, cascade functions, and materialized views against a real database.
 
 ## Next Steps
 

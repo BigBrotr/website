@@ -101,5 +101,5 @@ These eliminate partial inserts and maintain referential integrity without appli
 ## Next Steps
 
 - [Database Schema](/database/schema/) — table definitions and relationships.
-- [Stored Procedures](/database/procedures/) — the 25 database functions.
+- [Stored Functions](/database/procedures/) — the 25 database functions.
 - [Materialized Views](/database/views/) — pre-computed analytics.

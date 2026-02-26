@@ -14,7 +14,7 @@ The most recent metadata per relay per type. This is the primary view for queryi
 ```sql
 -- Example: get latest NIP-11 info for a relay
 SELECT data FROM relay_metadata_latest
-WHERE relay_url = 'wss://relay.example.com' AND metadata_type = 'nip11';
+WHERE relay_url = 'wss://relay.example.com' AND metadata_type = 'NIP11_INFO';
 ```
 
 ### event_stats
