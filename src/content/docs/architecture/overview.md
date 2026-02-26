@@ -1,284 +1,90 @@
 ---
 title: Architecture Overview
-description: Understanding BigBrotr's three-layer modular architecture
+description: The diamond DAG dependency structure, design principles, and high-level system design.
 ---
 
-BigBrotr follows a three-layer architecture that separates concerns and enables maximum flexibility. This design allows multiple deployments from the same codebase, easy testing through dependency injection, and configuration-driven behavior without code changes.
+BigBrotr's architecture follows a **diamond DAG** (Directed Acyclic Graph) dependency structure. Every import flows strictly downward through well-defined layers, preventing circular dependencies and ensuring clean separation of concerns.
 
-## Three-Layer Architecture
+## Diamond DAG
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      IMPLEMENTATION LAYER                            │
-│                                                                      │
-│   implementations/bigbrotr/    implementations/lilbrotr/             │
-│   ├── yaml/                    ├── yaml/                             │
-│   ├── postgres/init/           ├── postgres/init/                    │
-│   ├── data/seed_relays.txt     ├── data/seed_relays.txt              │
-│   └── docker-compose.yaml      └── docker-compose.yaml               │
-│                                                                      │
-│   Purpose: Define HOW this specific deployment behaves               │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │ Uses
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                         SERVICE LAYER                                │
-│                                                                      │
-│   src/services/                                                      │
-│   ├── initializer.py    Database bootstrap and verification         │
-│   ├── finder.py         Relay URL discovery                         │
-│   ├── monitor.py        Relay health monitoring (NIP-11/NIP-66)     │
-│   ├── synchronizer.py   Event collection and sync                   │
-│   ├── api.py            REST API (planned)                          │
-│   └── dvm.py            Data Vending Machine (planned)              │
-│                                                                      │
-│   Purpose: Business logic, service coordination, data transformation │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │ Leverages
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                          CORE LAYER                                  │
-│                                                                      │
-│   src/core/                                                          │
-│   ├── pool.py           PostgreSQL connection pooling                │
-│   ├── brotr.py          Database interface + stored procedures       │
-│   ├── base_service.py   Abstract service base class                  │
-│   └── logger.py         Structured logging                           │
-│                                                                      │
-│   Purpose: Reusable foundation, zero business logic                  │
-└─────────────────────────────────────────────────────────────────────┘
+              services          Orchestration
+             /   |   \
+          core  nips  utils    Infrastructure
+             \   |   /
+              models           Pure domain types
 ```
 
-## Layer Responsibilities
+**Five packages, one rule: imports only flow downward.**
 
-| Layer | Responsibility | Changes When |
-|-------|----------------|--------------|
-| **Core** | Infrastructure, utilities, abstractions | Rarely - foundation is stable |
-| **Service** | Business logic, orchestration | Feature additions, protocol updates |
-| **Implementation** | Configuration, customization | Per-deployment or environment |
+| Layer | Packages | Responsibility |
+|-------|----------|---------------|
+| Top | `services` | Business logic. Six independent services that orchestrate discovery, monitoring, and archiving. |
+| Middle | `core` | Connection pool, database facade, base service, logging, metrics. |
+| Middle | `nips` | Protocol-aware I/O. NIP-11 relay information, NIP-66 health monitoring. Depends on core, utils, and models. |
+| Middle | `utils` | Network primitives. DNS resolution, Nostr key management, WebSocket/HTTP transport, SOCKS5 proxy. |
+| Bottom | `models` | Pure frozen dataclasses. Zero I/O, zero `bigbrotr` imports. Uses only stdlib. |
 
-## Design Benefits
+### Import Rules
 
-### 1. Multiple Deployments
-The same codebase supports different deployment configurations:
-- **BigBrotr**: Full event storage (tags, content) with Tor support
-- **LilBrotr**: Lightweight indexing without tags/content (~60% disk savings)
-- **Custom**: Your own implementation for specific needs
+- **Same package**: relative imports (`from .logger import Logger`)
+- **Cross-package**: absolute imports (`from bigbrotr.core.logger import Logger`)
+- **models layer**: stdlib only (`import logging`)
+- **No upward imports**: `models` never imports from `core`; `core` never imports from `services`.
+- **No parent-relative imports**: enforced by ruff rule `ban-relative-imports = "parents"`.
 
-### 2. Testability
-Dependency injection enables comprehensive unit testing:
-```python
-# Production code
-service = MyService(brotr=real_brotr)
+## Design Principles
 
-# Test code
-mock_brotr = MagicMock(spec=Brotr)
-service = MyService(brotr=mock_brotr)
-```
+### Independent Services
 
-### 3. Configuration-Driven
-All behavior is configurable through YAML files:
-```yaml
-# yaml/services/synchronizer.yaml
-concurrency:
-  max_parallel: 10
-  max_processes: 10
-tor:
-  enabled: true
-```
+All six services run as independent processes. They communicate exclusively through the shared PostgreSQL database. There are no message queues, no gRPC calls, no inter-service APIs. Each service can start, stop, scale, and fail independently without affecting the others.
 
-### 4. Clear Separation
-Each layer has a single responsibility:
-- Core: "How do we connect to the database?"
-- Service: "What do we do with the data?"
-- Implementation: "How is this deployment configured?"
+### Immutable Domain Models
 
-## Data Flow
+Every model is a frozen dataclass with `__slots__`. Instances are immutable after construction. Validation happens in `__post_init__` — invalid data never escapes the constructor. This fail-fast approach means bugs surface immediately rather than propagating through the system.
 
-### Event Synchronization Flow
+### Content-Addressed Deduplication
+
+Metadata objects are hashed with SHA-256. Same data always produces the same hash. The composite primary key `(id, type)` means deduplication operates within each metadata type. This eliminates duplicates at the data layer without application-level coordination.
+
+### Database as Integration Point
+
+The PostgreSQL database is the single source of truth and the only communication channel between services. All mutations go through stored procedures with bulk array parameters. Materialized views provide pre-computed analytics. This design is simple, reliable, and eliminates distributed system failure modes.
+
+### Never Trust Stored Data
+
+When reconstructing objects from the database, BigBrotr re-validates everything. `Relay.from_db_params()` re-parses the URL completely. `Metadata.from_db_params()` recomputes and verifies the hash. This defensive approach catches data corruption at the boundary rather than deep in business logic.
+
+## System Topology
+
+A complete BigBrotr deployment consists of:
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Finder    │     │   Monitor   │     │ Synchronizer│
+│   Seeder    │     │   Finder    │     │  Validator   │
+│  (one-shot) │     │ (continuous)│     │ (continuous) │
 └──────┬──────┘     └──────┬──────┘     └──────┬──────┘
        │                   │                   │
-       │ Discover          │ Check health      │ Collect events
-       │ relay URLs        │ NIP-11/NIP-66     │ from relays
        ▼                   ▼                   ▼
-┌─────────────────────────────────────────────────────┐
-│                      PostgreSQL                      │
-│  ┌─────────┐  ┌──────┐  ┌─────────────────┐         │
-│  │ relays  │  │events│  │ relay_metadata  │         │
-│  └─────────┘  └──────┘  └─────────────────┘         │
-│       │           │              │                   │
-│       └───────────┴──────────────┘                   │
-│                events_relays                         │
-└─────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────┐
+│                    PgBouncer                       │
+│            (transaction pooling)                   │
+├────────────────────────────────────────────────────┤
+│                   PostgreSQL                       │
+│   6 tables · 25 procedures · 11 materialized views │
+└────────────────────────────────────────────────────┘
+       ▲                   ▲                   ▲
+       │                   │                   │
+┌──────┴──────┐     ┌──────┴──────┐     ┌──────┴──────┐
+│   Monitor   │     │  Refresher  │     │Synchronizer │
+│ (continuous)│     │ (scheduled) │     │ (continuous) │
+└─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-### Metadata Deduplication Flow
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                       Monitor Service                         │
-│                                                               │
-│   ┌─────────────┐     ┌─────────────┐     ┌──────────────┐   │
-│   │ Fetch NIP-11│────▶│Compute Hash │────▶│Check if exists│  │
-│   └─────────────┘     └─────────────┘     └──────────────┘   │
-│                                                  │            │
-│                                    ┌─────────────┴──────────┐│
-│                                    │                        ││
-│                                    ▼                        ▼│
-│                           ┌──────────────┐         ┌────────┐│
-│                           │Insert new rec│         │Reuse ID││
-│                           └──────────────┘         └────────┘│
-│                                    │                        ││
-│                                    └─────────────┬──────────┘│
-│                                                  │            │
-│                                                  ▼            │
-│                                    ┌─────────────────────────┐│
-│                                    │ Insert relay_metadata   ││
-│                                    │ (links relay to nip11/  ││
-│                                    │  nip66 by hash ID)      ││
-│                                    └─────────────────────────┘│
-└──────────────────────────────────────────────────────────────┘
-```
-
-## Concurrency Model
-
-### Async I/O
-All I/O operations are async using:
-- `asyncpg` for database operations
-- `aiohttp` for HTTP requests
-- `aiohttp-socks` for SOCKS5 proxy (Tor)
-
-### Connection Pooling
-
-```
-Application                PGBouncer              PostgreSQL
-    │                          │                      │
-    ├── asyncpg pool ─────────▶├── connection pool ──▶│
-    │   (20 connections)       │   (25 pool size)     │ (100 max)
-    │                          │                      │
-    ├── Service 1 ────────────▶│                      │
-    ├── Service 2 ────────────▶│                      │
-    ├── Service 3 ────────────▶│                      │
-    └── Service 4 ────────────▶│                      │
-```
-
-### Multicore Processing (Synchronizer)
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Main Process                              │
-│                                                                  │
-│   ┌────────────────────────────────────────────────────────┐    │
-│   │                   aiomultiprocess Pool                  │    │
-│   │                                                         │    │
-│   │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │    │
-│   │  │  Worker 1   │ │  Worker 2   │ │  Worker N   │       │    │
-│   │  │             │ │             │ │             │       │    │
-│   │  │ relay batch │ │ relay batch │ │ relay batch │       │    │
-│   │  │     │       │ │     │       │ │     │       │       │    │
-│   │  │     ▼       │ │     ▼       │ │     ▼       │       │    │
-│   │  │  events     │ │  events     │ │  events     │       │    │
-│   │  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘       │    │
-│   │         │               │               │               │    │
-│   └─────────┴───────────────┴───────────────┴───────────────┘    │
-│                             │                                     │
-│                             ▼                                     │
-│                    ┌────────────────┐                            │
-│                    │ Aggregate and  │                            │
-│                    │ insert to DB   │                            │
-│                    └────────────────┘                            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Design Patterns
-
-### Dependency Injection
-Services receive their dependencies via constructor:
-
-```python
-# Brotr is injected, not created internally
-service = MyService(brotr=brotr, config=config)
-
-# Enables testing with mocks
-mock_brotr = MagicMock(spec=Brotr)
-service = MyService(brotr=mock_brotr)
-```
-
-### Composition
-`Brotr` HAS-A `Pool` (rather than IS-A):
-
-```python
-class Brotr:
-    def __init__(self, pool: Pool | None = None, ...):
-        self._pool = pool or Pool(...)
-
-    @property
-    def pool(self) -> Pool:
-        return self._pool
-```
-
-### Template Method
-`BaseService.run_forever()` calls abstract `run()`:
-
-```python
-class BaseService:
-    async def run_forever(self, interval: float) -> None:
-        while not self._shutdown_requested:
-            await self.run()  # Template method
-            if await self.wait(interval):
-                break
-
-    @abstractmethod
-    async def run(self) -> None:
-        """Implemented by subclasses."""
-        pass
-```
-
-### Factory Method
-Services provide multiple construction paths:
-
-```python
-# From YAML file
-service = MyService.from_yaml("config.yaml", brotr=brotr)
-
-# From dictionary
-service = MyService.from_dict(config_dict, brotr=brotr)
-
-# Direct construction
-service = MyService(brotr=brotr, config=MyServiceConfig(...))
-```
-
-### Context Manager
-Resources are automatically managed:
-
-```python
-async with brotr:           # Connect on enter, close on exit
-    async with service:     # Load state on enter, save on exit
-        await service.run_forever(interval=3600)
-```
-
-## Graceful Shutdown
-
-```python
-# Signal handler (sync context)
-def handle_signal(signum, frame):
-    service.request_shutdown()  # Sets flag, doesn't await
-
-# Service main loop
-async def run_forever(self, interval: float) -> None:
-    while not self._shutdown_requested:
-        await self.run()
-        if await self.wait(interval):  # Returns early if shutdown
-            break
-    # Cleanup happens in context manager __aexit__
-```
+Each service connects to PgBouncer, which provides connection pooling in transaction mode. Writer services (all six) use the `writer` database user; read-only consumers (APIs, DVMs, monitoring dashboards) use the `reader` user.
 
 ## Next Steps
 
-- Learn about the [Core Layer](/architecture/core-layer/)
-- Explore the [Service Layer](/architecture/service-layer/)
-- Understand [Configuration](/configuration/overview/)
+- [Package Structure](/architecture/packages/) — detailed breakdown of each package.
+- [Data Flow](/architecture/data-flow/) — how data moves through the system.
+- [Services Overview](/services/overview/) — what each service does.

@@ -1,124 +1,184 @@
 ---
 title: BigBrotr
-description: A modular Nostr data archiving and monitoring system
+description: Modular Nostr data archiving and monitoring system. Discover relays, track their health, and archive events across clearnet and overlay networks.
 template: splash
 hero:
-  tagline: Enterprise-grade infrastructure for indexing, monitoring, and analyzing the Nostr protocol ecosystem
+  tagline: Modular infrastructure for Nostr relay discovery, health monitoring, and event archiving. Built with Python and PostgreSQL.
   image:
     file: ../../assets/logo.webp
   actions:
-    - text: Quick Start
-      link: /getting-started/quick-start/
+    - text: Get Started
+      link: /getting-started/introduction/
       icon: right-arrow
+      variant: primary
     - text: View on GitHub
-      link: https://github.com/bigbrotr/bigbrotr
-      icon: github
+      link: https://github.com/BigBrotr/bigbrotr
       variant: minimal
+      icon: external
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-## What is BigBrotr?
+## Three Pillars
 
-**BigBrotr** is a production-ready, modular system for archiving and monitoring the [Nostr protocol](https://nostr.com) ecosystem. Built with Python 3.9+ and PostgreSQL 16+, it provides comprehensive tools for relay discovery, health monitoring, and event synchronization across both clearnet and Tor networks.
-
-BigBrotr follows a **three-layer architecture** that separates concerns and enables maximum flexibility:
-- **Core Layer**: Reusable infrastructure components (connection pooling, database interface, logging)
-- **Service Layer**: Business logic and service orchestration (Finder, Monitor, Synchronizer)
-- **Implementation Layer**: Deployment-specific configuration (BigBrotr full-featured, LilBrotr lightweight)
-
----
-
-## Key Features
-
-<CardGrid stagger>
-  <Card title="Relay Discovery" icon="magnifier">
-    Automatically discover Nostr relays from public APIs (nostr.watch) and seed lists. Track over **8,800+ relays** across clearnet and Tor networks.
-  </Card>
-  <Card title="Health Monitoring" icon="heart">
-    Continuous NIP-11 and NIP-66 compliance testing with round-trip time (RTT) measurements. Monitor relay capabilities: openable, readable, writable.
-  </Card>
-  <Card title="Event Synchronization" icon="rocket">
-    High-performance multicore event collection using `aiomultiprocess`. Incremental sync with per-relay timestamp tracking for efficient updates.
-  </Card>
-  <Card title="Tor Network Support" icon="seti:lock">
-    Full support for `.onion` relay addresses via SOCKS5 proxy. Separate timeout configurations for Tor relays.
-  </Card>
-  <Card title="SQL Analytics" icon="seti:db">
-    Pre-built views for statistics, event analysis, and relay metrics. Ready-to-query analytics without complex SQL.
-  </Card>
-</CardGrid>
+<div class="pillar-grid">
+  <div class="pillar-card">
+    <h3>Discovery</h3>
+    <p>Find relays across clearnet, Tor, I2P, and Lokinet. Seed from known sources, discover new relays from NIP-65 events and public APIs, then validate each candidate with a live WebSocket handshake.</p>
+  </div>
+  <div class="pillar-card">
+    <h3>Health Monitoring</h3>
+    <p>Continuous health checks using NIP-11 relay information documents and NIP-66 monitoring events. Measures RTT latency, SSL certificate validity, DNS resolution, geographic location, network reachability, and HTTP status.</p>
+  </div>
+  <div class="pillar-card">
+    <h3>Event Archiving</h3>
+    <p>Cursor-based event synchronization collects and archives Nostr events from validated relays. Content-addressed metadata deduplication ensures storage efficiency through SHA-256 hashing.</p>
+  </div>
+</div>
 
 ---
 
-## Two Implementations, One Codebase
+## Architecture
 
-BigBrotr's architecture enables multiple deployment configurations from the same codebase:
+BigBrotr follows a **diamond DAG** dependency structure. Imports flow strictly
+downward, ensuring clean separation of concerns:
 
-| Implementation | Storage | Tor Support | Use Case |
-|----------------|---------|-------------|----------|
-| **BigBrotr** | Full (id, pubkey, created_at, kind, tags, content, sig) | Enabled | Complete archiving with full event data |
-| **LilBrotr** | Essential (id, pubkey, created_at, kind, sig) | Disabled | Lightweight indexing without heavy content |
-
-Both implementations index all events - LilBrotr simply omits the storage-heavy `tags` and `content` fields, saving ~60% disk space while retaining core event metadata for analytics and queries.
-
----
-
-## Technology Stack
-
-| Technology | Purpose |
-|------------|---------|
-| **Python 3.9+** | Primary programming language |
-| **PostgreSQL 16+** | Primary data storage with PGBouncer pooling |
-| **asyncpg** | High-performance async PostgreSQL driver |
-| **Pydantic** | Configuration validation and type safety |
-| **aiomultiprocess** | Multicore async processing |
-| **Docker** | Containerized deployment |
-
----
-
-## Get Started
+<div class="arch-diagram">
+{`            services          Orchestration
+           /   |   \\
+        core  nips  utils      Infrastructure
+           \\   |   /
+            models             Pure domain types`}
+</div>
 
 <CardGrid>
-  <Card title="Quick Start" icon="rocket">
-    Deploy BigBrotr in minutes with Docker Compose. [Get started →](/getting-started/quick-start/)
+  <Card title="models" icon="document">
+    Pure frozen dataclasses representing Nostr concepts. Zero I/O, zero external
+    dependencies. Fail-fast validation and content-addressed deduplication.
   </Card>
-  <Card title="Architecture" icon="setting">
-    Understand the three-layer architecture and design patterns. [Learn more →](/architecture/overview/)
+  <Card title="core" icon="setting">
+    Connection pool with retry and backoff, database facade, abstract base
+    service, structured logging, and Prometheus metrics.
   </Card>
-  <Card title="Services" icon="list-format">
-    Explore the Initializer, Finder, Monitor, and Synchronizer services. [View services →](/services/initializer/)
+  <Card title="nips" icon="approve-check-circle">
+    Protocol-aware I/O. NIP-11 fetches relay information documents; NIP-66 runs
+    six health tests (RTT, SSL, DNS, Geo, Net, HTTP).
   </Card>
-  <Card title="Database" icon="seti:db">
-    Learn about the schema, tables, views, and stored procedures. [View schema →](/database/schema/)
+  <Card title="utils" icon="random">
+    DNS resolution, Nostr key management, WebSocket and HTTP transport with SSL
+    fallback and SOCKS5 proxy support.
   </Card>
 </CardGrid>
 
 ---
 
-## Roadmap
+## Six Independent Services
 
-### Completed (v2.0.0)
-- Three-layer modular architecture
-- Core layer (Pool, Brotr, BaseService, Logger)
-- All services (Initializer, Finder, Monitor, Synchronizer)
-- Async database with asyncpg + PGBouncer
-- Docker Compose deployment
-- 174 unit tests with full type hints
+All services run independently and communicate exclusively through the shared
+PostgreSQL database. No message queues, no inter-service APIs.
 
-### Planned
-- REST API service with OpenAPI documentation
-- NIP-90 Data Vending Machine (DVM) support
-- Prometheus metrics export
-- Admin dashboard
-- Database backup automation
+<div class="stats-grid">
+  <div class="stat-item">
+    <span class="stat-number">6</span>
+    <span class="stat-label">Services</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">25</span>
+    <span class="stat-label">Stored Procedures</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">11</span>
+    <span class="stat-label">Materialized Views</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">6</span>
+    <span class="stat-label">Tables</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">2400+</span>
+    <span class="stat-label">Tests</span>
+  </div>
+</div>
+
+<CardGrid>
+  <LinkCard
+    title="Seeder"
+    description="One-shot bootstrap from seed files and known relay lists."
+    href="/services/seeder/"
+  />
+  <LinkCard
+    title="Finder"
+    description="Discovers relay URLs from NIP-65 events and public APIs."
+    href="/services/finder/"
+  />
+  <LinkCard
+    title="Validator"
+    description="WebSocket handshake test, promotes candidates to relay table."
+    href="/services/validator/"
+  />
+  <LinkCard
+    title="Monitor"
+    description="NIP-11 and NIP-66 health checks, publishes kind 10166/30166."
+    href="/services/monitor/"
+  />
+  <LinkCard
+    title="Refresher"
+    description="Orchestrates materialized view refresh cycles."
+    href="/services/refresher/"
+  />
+  <LinkCard
+    title="Synchronizer"
+    description="Cursor-based event collection from validated relays."
+    href="/services/synchronizer/"
+  />
+</CardGrid>
 
 ---
 
-## Community
+## Quick Start
 
-BigBrotr is open source under the MIT license. Contributions are welcome!
+```bash
+# Clone the repository
+git clone https://github.com/BigBrotr/bigbrotr.git
+cd bigbrotr/deployments/bigbrotr
 
-- [GitHub Repository](https://github.com/bigbrotr/bigbrotr)
-- [Contributing Guide](/resources/contributing/)
-- [FAQ](/resources/faq/)
+# Start the full stack
+docker compose up -d
+
+# Run a single service
+python -m bigbrotr seeder --once
+python -m bigbrotr finder --log-level DEBUG
+```
+
+<LinkCard
+  title="Full Quick Start Guide"
+  description="Step-by-step instructions with Docker Compose and configuration."
+  href="/getting-started/quick-start/"
+/>
+
+---
+
+## Explore
+
+<CardGrid>
+  <LinkCard
+    title="Architecture Deep Dive"
+    description="Diamond DAG, package responsibilities, design principles."
+    href="/architecture/overview/"
+  />
+  <LinkCard
+    title="Database Schema"
+    description="Tables, stored procedures, materialized views."
+    href="/database/schema/"
+  />
+  <LinkCard
+    title="Configuration Guide"
+    description="YAML configs, environment variables, deployments."
+    href="/configuration/overview/"
+  />
+  <LinkCard
+    title="Contributing"
+    description="Development setup, testing, coding standards."
+    href="/development/contributing/"
+  />
+</CardGrid>

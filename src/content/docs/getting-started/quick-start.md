@@ -1,204 +1,107 @@
 ---
 title: Quick Start
-description: Deploy BigBrotr in minutes with Docker Compose
+description: Get BigBrotr running in minutes with Docker Compose.
 ---
 
-This guide walks you through deploying BigBrotr using Docker Compose. You'll have a fully functional Nostr archiving system running in minutes.
+This guide gets you from zero to a running BigBrotr instance using Docker Compose. You will have all six services, PostgreSQL with PgBouncer, and Prometheus monitoring operational within minutes.
 
 ## Prerequisites
 
-- **Docker** and **Docker Compose** installed
-- **Git** for cloning the repository
-- At least **4GB RAM** recommended
-- **10GB+ disk space** for initial data
+- Docker Engine 24+ and Docker Compose v2
+- 4 GB RAM minimum (8 GB recommended)
+- 20 GB disk space for initial data collection
 
-## Step 1: Clone the Repository
+## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/bigbrotr/bigbrotr.git
-cd bigbrotr
+git clone https://github.com/BigBrotr/bigbrotr.git
+cd bigbrotr/deployments/bigbrotr
 ```
 
-## Step 2: Configure Environment
+## 2. Configure Environment
 
-Navigate to the BigBrotr implementation and create your environment file:
+Copy the example environment file and review the defaults:
 
 ```bash
-cd implementations/bigbrotr
 cp .env.example .env
 ```
 
-Edit the `.env` file to set your database password:
+The key environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_USER` | `admin` | PostgreSQL superuser |
+| `POSTGRES_PASSWORD` | — | Set a strong password |
+| `POSTGRES_DB` | `bigbrotr` | Database name |
+| `WRITER_USER` | `writer` | Writer services (all six services) |
+| `READER_USER` | `reader` | Read-only services (API, DVM, monitoring) |
+
+## 3. Start the Stack
 
 ```bash
-# Required: Set a secure password
-DB_PASSWORD=your_secure_password_here
-
-# Optional: For NIP-66 write tests
-MONITOR_PRIVATE_KEY=your_hex_private_key
+docker compose up -d
 ```
 
-:::caution
-Always use a strong, unique password for `DB_PASSWORD` in production environments.
-:::
+This starts:
+- **PostgreSQL** — database with schema initialization
+- **PgBouncer** — connection pooling in transaction mode
+- **Prometheus** — metrics collection and alerting
 
-## Step 3: Start Services
+## 4. Run Services
 
-Launch all services with Docker Compose:
+Services run individually. Start with the one-shot Seeder to bootstrap the relay list:
 
 ```bash
-docker-compose up -d
+# Bootstrap relay discovery (one-shot, exits when done)
+python -m bigbrotr seeder --once
+
+# Start continuous relay discovery
+python -m bigbrotr finder
+
+# Validate discovered relay candidates
+python -m bigbrotr validator
+
+# Health monitoring with NIP-11 and NIP-66
+python -m bigbrotr monitor
+
+# Materialized view refresh
+python -m bigbrotr refresher
+
+# Event collection
+python -m bigbrotr synchronizer
 ```
 
-This starts the following services:
+## 5. Verify
 
-| Service | Description | Port |
-|---------|-------------|------|
-| **postgres** | PostgreSQL 16 database | 5432 |
-| **pgbouncer** | Connection pooling | 6432 |
-| **tor** | SOCKS5 proxy for .onion relays | 9050 |
-| **initializer** | Database bootstrap (one-shot) | - |
-| **finder** | Relay discovery | - |
-| **monitor** | Health monitoring | - |
-| **synchronizer** | Event collection | - |
-
-## Step 4: Verify Deployment
-
-Watch the initializer complete:
+Check that services are writing data:
 
 ```bash
-docker-compose logs -f initializer
+# Connect to the database
+docker compose exec postgres psql -U admin -d bigbrotr
+
+# Count discovered relays
+SELECT count(*) FROM relay;
+
+# Check service states
+SELECT service, state, updated_at FROM service_state ORDER BY updated_at DESC;
+
+# View materialized view stats
+SELECT * FROM relay_stats LIMIT 5;
 ```
 
-You should see output indicating successful schema verification and relay seeding:
+## 6. Monitor
 
-```
-INFO initializer: schema_verified extensions=2 tables=7 procedures=6 views=1
-INFO initializer: relays_seeded count=8865
-INFO initializer: initialization_complete
-```
+Prometheus is available at `http://localhost:9090`. Each service exposes metrics on its configured port:
 
-Check all services are running:
-
-```bash
-docker-compose ps
-```
-
-## Step 5: Access the Database
-
-Connect to PostgreSQL to verify data:
-
-```bash
-docker-compose exec postgres psql -U admin -d bigbrotr
-```
-
-Check relay count:
-
-```sql
-SELECT COUNT(*) FROM relays;
--- Expected: ~8865 initially
-
-SELECT network, COUNT(*) FROM relays GROUP BY network;
--- Shows clearnet vs tor distribution
-```
-
-Check latest relay metadata:
-
-```sql
-SELECT relay_url, nip66_openable, nip66_readable
-FROM relay_metadata_latest
-WHERE nip66_openable = true
-LIMIT 10;
-```
-
-## What Happens Next?
-
-After initialization, the services operate continuously:
-
-1. **Finder** discovers new relays every hour from nostr.watch APIs
-2. **Monitor** checks relay health every hour (NIP-11/NIP-66)
-3. **Synchronizer** collects events every 15 minutes from readable relays
-
-## Common Operations
-
-### View Service Logs
-
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f synchronizer
-```
-
-### Stop Services
-
-```bash
-docker-compose down
-```
-
-### Reset Everything
-
-:::danger
-This permanently deletes all data!
-:::
-
-```bash
-docker-compose down
-rm -rf data/postgres
-docker-compose up -d
-```
-
-### Restart a Service
-
-```bash
-docker-compose restart monitor
-```
-
-## Using LilBrotr (Lightweight)
-
-For a lightweight deployment that indexes events without storing tags and content (~60% disk savings):
-
-```bash
-cd implementations/lilbrotr
-cp .env.example .env
-nano .env  # Set DB_PASSWORD
-docker-compose up -d
-```
-
-LilBrotr uses different ports to avoid conflicts:
-- PostgreSQL: 5433
-- PGBouncer: 6433
-- Tor: 9051
-
-See [Implementations](/getting-started/implementations/) for detailed comparison.
-
-## Manual Deployment (Without Docker)
-
-For development or custom deployments:
-
-```bash
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment
-export DB_PASSWORD=your_secure_password
-
-# Run services (from implementations/bigbrotr/)
-cd implementations/bigbrotr
-python -m services initializer
-python -m services finder &
-python -m services monitor &
-python -m services synchronizer &
-```
+| Service | Metrics Port |
+|---------|-------------|
+| Finder | 8001 |
+| Validator | 8002 |
+| Monitor | 8003 |
+| Synchronizer | 8004 |
 
 ## Next Steps
 
-- Learn about the [Architecture](/architecture/overview/)
-- Explore individual [Services](/services/initializer/)
-- Understand the [Database Schema](/database/schema/)
-- Customize [Configuration](/configuration/overview/)
+- [Architecture Overview](/architecture/overview/) — understand how the system is designed.
+- [Configuration Guide](/configuration/overview/) — customize timeouts, batch sizes, and network settings.
+- [Deployments](/configuration/deployments/) — learn about BigBrotr vs LilBrotr configurations.

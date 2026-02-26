@@ -1,72 +1,56 @@
 ---
 title: Introduction
-description: Learn what BigBrotr is and why it exists
+description: What BigBrotr is, why it exists, and what problems it solves.
 ---
 
-BigBrotr is an enterprise-grade, modular system for archiving and monitoring the Nostr protocol ecosystem. It provides comprehensive tools for relay discovery, health monitoring, and event synchronization across both clearnet and Tor networks.
+BigBrotr is a modular system for discovering, monitoring, and archiving the Nostr relay network. It answers three fundamental questions:
+
+1. **What relays exist?** Across clearnet, Tor, I2P, and Lokinet.
+2. **How healthy are they?** RTT latency, SSL validity, DNS resolution, NIP-11 metadata, NIP-66 monitoring.
+3. **What events are they publishing?** Cursor-based synchronization and content-addressed archival.
 
 ## Why BigBrotr?
 
-Nostr's decentralized nature eliminates any central authority, granting unprecedented freedom but also creating challenges around network visibility, coordination, and data integrity. BigBrotr addresses these challenges by serving as a comprehensive, transparent archive of the entire Nostr ecosystem.
+Nostr is a decentralized protocol where events are scattered across hundreds of independent relays. Each relay is ephemeral and can disappear at any time. No single entity sees the whole picture, and unreplicated events are lost forever.
 
-### Use Cases
+BigBrotr provides complete network visibility by running six independent services that share a PostgreSQL database. There are no message queues, no inter-service APIs, and no complex orchestration layers. Each service has a single responsibility and can run, scale, and fail independently.
 
-- **Relay Operators**: Monitor relay health, track performance metrics, and understand network behavior
-- **Researchers**: Analyze Nostr adoption patterns, study relay distribution, and measure network growth
-- **Developers**: Build applications on top of comprehensive Nostr data with ready-to-query analytics
-- **Archive Operators**: Preserve historical Nostr events before they disappear from relays
+## Three Pillars
 
-## Core Capabilities
+### Discovery
 
-### Relay Discovery
-BigBrotr automatically discovers Nostr relays from:
-- Public APIs like nostr.watch
-- Seed lists containing 8,865+ known relay URLs
-- Network detection for both clearnet and `.onion` addresses
+The Seeder loads relay URLs from seed files and known relay lists. The Finder continuously discovers new relay URLs from NIP-65 events and public APIs. The Validator tests each candidate with a live WebSocket handshake and promotes valid relays to the relay table.
 
 ### Health Monitoring
-Continuous monitoring of relay capabilities:
-- **NIP-11**: Relay information documents with metadata
-- **NIP-66**: Capability testing (openable, readable, writable)
-- **RTT Measurement**: Round-trip time tracking for performance analysis
 
-### Event Synchronization
-High-performance event collection:
-- **Multicore Processing**: Parallel relay synchronization with up to 32 worker processes
-- **Incremental Sync**: Per-relay timestamp tracking for efficient updates
-- **Time-Window Stack Algorithm**: Handles large event volumes efficiently
+The Monitor performs continuous health checks using NIP-11 relay information documents and NIP-66 relay monitoring events. It measures RTT latency, SSL certificate validity, DNS resolution, geographic location, network reachability, and HTTP status. Results are stored as content-addressed metadata and optionally published as kind 10166/30166 Nostr events.
 
-### Data Storage
-Efficient PostgreSQL-based storage:
-- **BYTEA Storage**: 50% space savings for event IDs compared to hex strings
-- **Content Deduplication**: Hash-based NIP-11/NIP-66 storage
-- **Pre-built Views**: Ready-to-query statistics and analytics
+### Event Archiving
 
-## Design Philosophy
+The Synchronizer uses cursor-based pagination to collect and archive Nostr events from validated relays. Content-addressed metadata deduplication (SHA-256) ensures storage efficiency. The Refresher orchestrates periodic refresh cycles for 11 materialized views that power analytics queries.
 
-BigBrotr follows key design principles that make it production-ready:
+## Technology Stack
 
-| Principle | Implementation |
-|-----------|----------------|
-| **Three-Layer Architecture** | Core (reusable) → Services (modular) → Implementation (config-driven) |
-| **Dependency Injection** | Services receive database interface via constructor for testability |
-| **Configuration-Driven** | YAML configuration with Pydantic validation, minimal hardcoding |
-| **Type Safety** | Full type hints with strict mypy checking throughout codebase |
-| **Async-First** | Built on asyncio, asyncpg, and aiohttp for maximum concurrency |
+| Component | Technology |
+|-----------|-----------|
+| Language | Python 3.11+ with full async/await |
+| Database | PostgreSQL 16+ with asyncpg |
+| Connection Pooling | PgBouncer (transaction mode) |
+| Configuration | Pydantic models from YAML files |
+| Metrics | Prometheus exposition format |
+| Containerization | Docker with parametric Dockerfile |
+| Overlay Networks | Tor, I2P, Lokinet via SOCKS5 proxy |
 
-## Version 2.0.0
+## Who Is This For?
 
-The current release (v2.0.0) represents a complete rewrite with:
-
-- Three-layer modular architecture
-- Full async database operations with asyncpg
-- PGBouncer integration for connection pooling
-- State persistence for fault tolerance
-- 174 unit tests with comprehensive coverage
-- Docker Compose deployment ready
+- **Researchers** studying Nostr network topology, relay behavior, and event propagation patterns.
+- **Developers** building applications that need relay recommendations, health data, or event archives.
+- **Relay operators** wanting to understand their relay's position in the network.
+- **Protocol designers** testing NIP implementations against real-world data.
+- **Anyone** who wants to run their own Nostr network observatory.
 
 ## Next Steps
 
-Ready to get started? Follow the [Quick Start guide](/getting-started/quick-start/) to deploy your own BigBrotr instance in minutes.
-
-Want to understand the architecture first? Check out the [Architecture Overview](/architecture/overview/).
+- [Quick Start](/getting-started/quick-start/) — get BigBrotr running in minutes with Docker Compose.
+- [Installation](/getting-started/installation/) — install from source for development.
+- [Architecture Overview](/architecture/overview/) — understand the diamond DAG design.

@@ -1,222 +1,131 @@
 ---
 title: Schema Overview
-description: BigBrotr's PostgreSQL database schema
+description: BigBrotr's database schema with tables, relationships, and design principles.
 ---
 
-BigBrotr uses PostgreSQL 16+ with PGBouncer for connection pooling. The schema is designed for efficient storage, fast queries, and data integrity.
+BigBrotr uses PostgreSQL 16 with a schema designed around immutability, content-addressed deduplication, and cascade atomicity. All mutations go through stored procedures.
+
+## Entity Relationship Diagram
+
+```
+relay                           event
+├─ url (PK, TEXT)               ├─ id (PK, TEXT)
+├─ network (TEXT)               ├─ pubkey (TEXT)
+├─ first_seen (TIMESTAMPTZ)    ├─ created_at (TIMESTAMPTZ)
+└─ last_seen (TIMESTAMPTZ)     ├─ kind (INT)
+     │                          ├─ tags (JSONB)
+     │                          ├─ content (TEXT)
+     │                          └─ sig (TEXT)
+     │                               │
+     ├──────────┐    ┌───────────────┘
+     ▼          ▼    ▼
+relay_metadata       event_relay
+├─ relay_url (FK)    ├─ event_id (FK → event)
+├─ metadata_id (FK)  ├─ relay_url (FK → relay)
+├─ metadata_type(FK) └─ first_seen (TIMESTAMPTZ)
+└─ generated_at
+     │
+     ▼
+metadata                    service_state
+├─ id (PK, TEXT)            ├─ service (TEXT)
+├─ type (PK, TEXT)          ├─ relay_url (TEXT)
+└─ data (JSONB)             ├─ state_type (TEXT)
+                            └─ state_value (JSONB)
+```
+
+## Tables
+
+### relay
+
+The canonical relay registry. Every validated relay has exactly one row.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `url` | `TEXT` (PK) | WebSocket URL (wss:// or ws://) |
+| `network` | `TEXT` | Network type: clearnet, tor, i2p, loki, local |
+| `first_seen` | `TIMESTAMPTZ` | When the relay was first validated |
+| `last_seen` | `TIMESTAMPTZ` | Most recent successful contact |
+
+### event
+
+Nostr events identified by their SHA-256 event ID.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `TEXT` (PK) | Nostr event ID (SHA-256 hash) |
+| `pubkey` | `TEXT` | Author's public key (hex) |
+| `created_at` | `TIMESTAMPTZ` | Event creation timestamp |
+| `kind` | `INT` | Event kind number |
+| `tags` | `JSONB` | Event tags array |
+| `content` | `TEXT` | Event content |
+| `sig` | `TEXT` | Schnorr signature |
+
+### event_relay
+
+Junction table tracking which relays have which events.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `event_id` | `TEXT` (FK → event) | Event ID |
+| `relay_url` | `TEXT` (FK → relay) | Relay URL |
+| `first_seen` | `TIMESTAMPTZ` | When event was first seen on this relay |
+
+### metadata
+
+Content-addressed metadata store. Same data always produces the same ID via SHA-256.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | `TEXT` (composite PK) | SHA-256 hash of canonical JSON `data` |
+| `type` | `TEXT` (composite PK) | Metadata type (nip11, open_timestamp, ssl, dns, etc.) |
+| `data` | `JSONB` | Metadata payload |
+
+The composite primary key `(id, type)` means deduplication operates within each metadata type.
+
+### relay_metadata
+
+Junction table linking relays to their metadata with timestamps.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `relay_url` | `TEXT` (FK → relay) | Relay URL |
+| `metadata_id` | `TEXT` (compound FK) | References metadata.id |
+| `metadata_type` | `TEXT` (compound FK) | References metadata.type |
+| `generated_at` | `TIMESTAMPTZ` | When metadata was generated |
+
+### service_state
+
+Service checkpoint storage for cursor-based operations and service state tracking.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `service` | `TEXT` | Service name (seeder, finder, etc.) |
+| `relay_url` | `TEXT` | Associated relay (optional) |
+| `state_type` | `TEXT` | State type identifier |
+| `state_value` | `JSONB` | State payload |
 
 ## Design Principles
 
-### BYTEA Storage
+### No CHECK Constraints
 
-Event IDs and signatures are stored as BYTEA (binary) instead of hex strings:
+Validation happens in the Python model layer, not in the database. This keeps the schema simple and avoids duplicating validation logic.
 
-| Storage | Size (32 bytes) | Savings |
-|---------|-----------------|---------|
-| CHAR(64) hex | 64 bytes | - |
-| BYTEA binary | 32 bytes | **50%** |
+### Hash Computed in Python
 
-### Content Deduplication
+SHA-256 hashes for content-addressed metadata are computed in Python, not via pgcrypto. This ensures consistency across the application and makes the hashing algorithm explicit in the codebase.
 
-NIP-11 and NIP-66 documents use content-addressed storage:
-- Documents are hashed (SHA-256)
-- Identical documents share one record
-- `relay_metadata` links relays to documents by hash
+### All Mutations via Stored Procedures
 
-### Normalized Schema
+No raw INSERT/UPDATE/DELETE statements in application code. All mutations go through the 25 stored procedures, which accept bulk array parameters for efficiency.
 
-```
-relays ──────────────┬──────────────── relay_metadata
-                     │                      │
-                     │                 ┌────┴────┐
-                     │                 │         │
-events ─── events_relays             nip11    nip66
-```
+### Cascade Functions
 
-## Schema Overview
+Two cascade functions handle atomic multi-table inserts:
 
-### Core Tables
-
-| Table | Purpose | Primary Key |
-|-------|---------|-------------|
-| `relays` | Registry of known relay URLs | `url` |
-| `events` | Nostr events | `id` (BYTEA) |
-| `events_relays` | Event-relay associations | `(event_id, relay_url)` |
-
-### Metadata Tables
-
-| Table | Purpose | Primary Key |
-|-------|---------|-------------|
-| `nip11` | Deduplicated NIP-11 documents | `id` (hash) |
-| `nip66` | Deduplicated NIP-66 test results | `id` (hash) |
-| `relay_metadata` | Time-series metadata snapshots | `(relay_url, generated_at)` |
-
-### System Tables
-
-| Table | Purpose | Primary Key |
-|-------|---------|-------------|
-| `service_state` | Service state persistence | `service_name` |
-
-## Extensions
-
-BigBrotr requires these PostgreSQL extensions:
-
-```sql
-CREATE EXTENSION IF NOT EXISTS pgcrypto;    -- Hash functions
-CREATE EXTENSION IF NOT EXISTS btree_gin;   -- GIN index support
-```
-
-## Indexes
-
-### Events Table
-
-```sql
-CREATE INDEX idx_events_created_at ON events(created_at DESC);
-CREATE INDEX idx_events_pubkey ON events(pubkey);
-CREATE INDEX idx_events_kind ON events(kind);
-CREATE INDEX idx_events_pubkey_created_at ON events(pubkey, created_at DESC);
-CREATE INDEX idx_events_tagvalues ON events USING gin(tagvalues);  -- BigBrotr only
-```
-
-### Events-Relays Table
-
-```sql
-CREATE INDEX idx_events_relays_relay_url ON events_relays(relay_url);
-CREATE INDEX idx_events_relays_seen_at ON events_relays(seen_at DESC);
-```
-
-### Relay Metadata Table
-
-```sql
-CREATE INDEX idx_relay_metadata_generated_at ON relay_metadata(generated_at DESC);
-```
-
-## BigBrotr vs LilBrotr Schema
-
-The key difference is in the `events` table:
-
-### BigBrotr (Full Storage)
-
-```sql
-CREATE TABLE events (
-    id BYTEA PRIMARY KEY,
-    pubkey BYTEA NOT NULL,
-    created_at BIGINT NOT NULL,
-    kind INTEGER NOT NULL,
-    tags JSONB NOT NULL,                              -- Stored
-    tagvalues TEXT[] GENERATED ALWAYS AS
-        (tags_to_tagvalues(tags)) STORED,             -- Indexed
-    content TEXT NOT NULL,                             -- Stored
-    sig BYTEA NOT NULL
-);
-```
-
-### LilBrotr (Essential Metadata)
-
-```sql
-CREATE TABLE events (
-    id BYTEA PRIMARY KEY,
-    pubkey BYTEA NOT NULL,
-    created_at BIGINT NOT NULL,
-    kind INTEGER NOT NULL,
-    -- tags NOT stored (saves ~40%)
-    -- tagvalues NOT generated
-    -- content NOT stored (saves ~20%)
-    sig BYTEA NOT NULL
-);
-```
-
-**Disk savings**: ~60% compared to BigBrotr
-
-LilBrotr still indexes all events with their essential metadata (id, pubkey, created_at, kind, sig). You can query by author, event kind, timestamp, and track which relays have which events. Only the heavy `tags` and `content` fields are omitted.
-
-## Entity Relationship
-
-```
-                              ┌─────────────────────────────┐
-                              │           relays            │
-                              │  url (PK)                   │
-                              │  network                    │
-                              │  inserted_at                │
-                              └──────────────┬──────────────┘
-                                     │       │
-                      ┌──────────────┘       └──────────────┐
-                      │                                     │
-                      ▼                                     ▼
-         ┌──────────────────────┐              ┌──────────────────────┐
-         │    events_relays     │              │    relay_metadata    │
-         │  event_id (FK)       │              │  relay_url (FK, PK)  │
-         │  relay_url (FK)      │              │  generated_at (PK)   │
-         │  seen_at             │              │  nip11_id (FK)       │
-         └──────────┬───────────┘              │  nip66_id (FK)       │
-                    │                          └───────────┬──────────┘
-                    │                                ┌─────┴─────┐
-                    ▼                                │           │
-         ┌──────────────────────┐                    ▼           ▼
-         │        events        │           ┌───────────┐ ┌───────────┐
-         │  id (PK)             │           │   nip11   │ │   nip66   │
-         │  pubkey              │           │  id (PK)  │ │  id (PK)  │
-         │  created_at          │           │  name     │ │  openable │
-         │  kind                │           │  desc     │ │  readable │
-         │  tags                │           │  nips     │ │  writable │
-         │  content             │           │  ...      │ │  rtt_*    │
-         │  sig                 │           └───────────┘ └───────────┘
-         └──────────────────────┘
-
-                              ┌─────────────────────────────┐
-                              │       service_state         │
-                              │  service_name (PK)          │
-                              │  state (JSONB)              │
-                              │  updated_at                 │
-                              └─────────────────────────────┘
-```
-
-## SQL Schema Files
-
-Schema is defined in numbered SQL files in `postgres/init/`:
-
-| File | Purpose |
-|------|---------|
-| `01_extensions.sql` | PostgreSQL extensions |
-| `02_tables.sql` | Table definitions |
-| `03_indexes.sql` | Index creation |
-| `04_functions.sql` | Stored procedures |
-| `05_views.sql` | Analytics views |
-
-Files are executed in order by PostgreSQL on initialization.
-
-## Connecting to the Database
-
-### Via Docker
-
-```bash
-# Direct PostgreSQL
-docker-compose exec postgres psql -U admin -d bigbrotr
-
-# Via PGBouncer
-psql -h localhost -p 6432 -U admin -d bigbrotr
-```
-
-### Connection String
-
-```
-postgresql://admin:password@localhost:6432/bigbrotr
-```
-
-### PGBouncer Configuration
-
-```ini
-[databases]
-bigbrotr = host=postgres port=5432 dbname=bigbrotr
-
-[pgbouncer]
-pool_mode = transaction
-max_client_conn = 100
-default_pool_size = 25
-```
+- **`event_relay_insert_cascade`** — inserts across `relay`, `event`, and `event_relay` in a single call.
+- **`relay_metadata_insert_cascade`** — inserts across `relay`, `metadata`, and `relay_metadata` in a single call.
 
 ## Next Steps
 
-- Explore [Tables](/database/tables/) in detail
-- Learn about [Views & Procedures](/database/views-procedures/)
-- Understand [Configuration](/configuration/core/)
+- [Stored Procedures](/database/procedures/) — the 25 database functions.
+- [Materialized Views](/database/views/) — 11 pre-computed analytics views.
