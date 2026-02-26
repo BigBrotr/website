@@ -17,6 +17,11 @@ export default defineConfig({
           label: "GitHub",
           href: "https://github.com/BigBrotr/bigbrotr",
         },
+        {
+          icon: "external",
+          label: "Presentation",
+          href: "https://presentation.bigbrotr.com",
+        },
       ],
       customCss: ["./src/styles/custom.css"],
       plugins: [
@@ -76,7 +81,7 @@ export default defineConfig({
           label: "Database",
           items: [
             { label: "Schema", slug: "database/schema" },
-            { label: "Stored Procedures", slug: "database/procedures" },
+            { label: "Stored Functions", slug: "database/procedures" },
             { label: "Materialized Views", slug: "database/views" },
           ],
         },

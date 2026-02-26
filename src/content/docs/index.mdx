@@ -108,22 +108,22 @@ PostgreSQL database. No message queues, no inter-service APIs.
   />
   <LinkCard
     title="Finder"
-    description="Discovers relay URLs from NIP-65 events and public APIs."
+    description="Discover relay URLs from NIP-65 events and public APIs."
     href="/services/finder/"
   />
   <LinkCard
     title="Validator"
-    description="WebSocket handshake test, promotes candidates to relay table."
+    description="WebSocket handshake test, promotes candidates to relays."
     href="/services/validator/"
   />
   <LinkCard
     title="Monitor"
-    description="NIP-11 and NIP-66 health checks, publishes kind 10166/30166."
+    description="NIP-11 and NIP-66 health checks with event publishing."
     href="/services/monitor/"
   />
   <LinkCard
     title="Refresher"
-    description="Orchestrates materialized view refresh cycles."
+    description="Orchestrates materialized view refresh on schedule."
     href="/services/refresher/"
   />
   <LinkCard
@@ -163,22 +163,32 @@ python -m bigbrotr finder --log-level DEBUG
 <CardGrid>
   <LinkCard
     title="Architecture Deep Dive"
-    description="Diamond DAG, package responsibilities, design principles."
+    description="Diamond DAG, package responsibilities, and design principles."
     href="/architecture/overview/"
   />
   <LinkCard
     title="Database Schema"
-    description="Tables, stored functions, materialized views."
+    description="Tables, stored functions, and materialized views."
     href="/database/schema/"
   />
   <LinkCard
     title="Configuration Guide"
-    description="YAML configs, environment variables, deployments."
+    description="YAML configs, environment variables, and deployments."
     href="/configuration/overview/"
   />
   <LinkCard
     title="Contributing"
-    description="Development setup, testing, coding standards."
+    description="Development setup, testing, and coding standards."
     href="/development/contributing/"
   />
 </CardGrid>
+
+---
+
+## External Resources
+
+<div class="external-links">
+  <a class="external-link" href="https://github.com/BigBrotr/bigbrotr" target="_blank">GitHub Repository</a>
+  <a class="external-link" href="https://pypi.org/project/bigbrotr/" target="_blank">Python Package (PyPI)</a>
+  <a class="external-link" href="https://presentation.bigbrotr.com" target="_blank">Presentation Slides</a>
+</div>
