@@ -1,0 +1,25 @@
+---
+import Default from '@astrojs/starlight/components/ThemeSelect.astro'
+---
+
+<div class="nav-links">
+	<a href="/docs/">Docs</a>
+	<a href="/blog">Blog</a>
+</div>
+<Default><slot /></Default>
+
+<style>
+	.nav-links {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		border-inline-end: 1px solid var(--sl-color-gray-5);
+		padding-inline-end: 1rem;
+	}
+
+	.nav-links a {
+		color: var(--sl-color-text-accent);
+		font-weight: 600;
+		text-decoration: none;
+	}
+</style>

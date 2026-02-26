@@ -18,6 +18,9 @@ export default defineConfig({
           href: "https://github.com/BigBrotr/bigbrotr",
         },
       ],
+      components: {
+        ThemeSelect: "./src/components/ThemeSelect.astro",
+      },
       customCss: ["./src/styles/custom.css"],
       plugins: [
         starlightBlog({
@@ -31,9 +34,6 @@ export default defineConfig({
           },
         }),
       ],
-      editLink: {
-        baseUrl: "https://github.com/BigBrotr/website/edit/main/",
-      },
       head: [
         {
           tag: "meta",

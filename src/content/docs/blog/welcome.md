@@ -43,6 +43,6 @@ Each service runs independently and communicates through the database:
 
 ## Get Started
 
-Check out the [Quick Start guide](/getting-started/quick-start/) to run BigBrotr with Docker Compose, or explore the [Architecture Overview](/architecture/overview/) to understand the design.
+Check out the [Quick Start guide](/docs/getting-started/quick-start/) to run BigBrotr with Docker Compose, or explore the [Architecture Overview](/docs/architecture/overview/) to understand the design.
 
 The full source code is available on [GitHub](https://github.com/BigBrotr/bigbrotr) under the MIT license.

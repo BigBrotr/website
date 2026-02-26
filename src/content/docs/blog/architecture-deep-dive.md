@@ -68,4 +68,4 @@ There's no orchestrator, no service mesh, no dependency injection framework. Jus
 3. **Content-address everything** — SHA-256 deduplication eliminates an entire class of data consistency bugs.
 4. **Fail fast** — frozen dataclasses with `__post_init__` validation catch errors at construction, not at use.
 
-The full architecture documentation is in the [Architecture Overview](/architecture/overview/).
+The full architecture documentation is in the [Architecture Overview](/docs/architecture/overview/).

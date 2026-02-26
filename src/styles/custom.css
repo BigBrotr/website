@@ -87,186 +87,25 @@
   color: var(--sl-color-gray-2);
 }
 
-/* ── Pillar cards (Three Pillars) ── */
+/* ── Blog previews ── */
 
-.pillar-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 1.25rem;
-  margin-block: 1.5rem;
+/* Hide author section — single-author project */
+.preview .authors {
+  display: none;
 }
 
-.pillar-card {
-  padding: 1.5rem;
-  border-radius: var(--bb-radius);
-  border: 1px solid var(--bb-card-border);
-  background: var(--bb-card-bg);
-  border-top: 3px solid var(--sl-color-accent);
-  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-
-.pillar-card:hover {
-  border-color: var(--sl-color-accent);
-  border-top-color: var(--sl-color-accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgb(124 58 237 / 0.12);
-}
-
-.pillar-card .pillar-icon {
-  font-size: 1.75rem;
-  margin-bottom: 0.75rem;
-  display: block;
-}
-
-.pillar-card h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--sl-color-accent-high);
-  font-size: var(--sl-text-lg);
-}
-
-.pillar-card p {
-  margin: 0;
-  color: var(--sl-color-gray-2);
-  font-size: var(--sl-text-sm);
-  line-height: 1.6;
-}
-
-/* Color variants for pillar top border */
-.pillar-card.discovery {
-  border-top-color: #7c3aed;
-}
-.pillar-card.monitoring {
-  border-top-color: #3b82f6;
-}
-.pillar-card.archiving {
-  border-top-color: #10b981;
-}
-
-/* ── Architecture diagram ── */
-
-.arch-diagram {
-  padding: clamp(1rem, 3vw, 2rem);
-  border-radius: var(--bb-radius);
-  background: var(--bb-card-bg);
-  border: 1px solid var(--bb-card-border);
-  font-family: var(--sl-font-mono);
-  font-size: clamp(0.75rem, 1.5vw, 0.9rem);
-  line-height: 1.6;
-  overflow-x: auto;
-  white-space: pre;
-  text-align: left;
-}
-
-/* ── Stats bar ── */
-
-.stats-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0;
-  margin-block: 2rem;
-  padding: 1.25rem 0;
-  border-radius: var(--bb-radius);
-  background: var(--bb-card-bg);
-  border: 1px solid var(--bb-card-border);
-}
-
-.stat-item {
-  flex: 1 1 auto;
-  min-width: 100px;
-  padding: 0.75rem 1.5rem;
-  text-align: center;
-  position: relative;
-}
-
-.stat-item:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 15%;
-  height: 70%;
-  border-right: 1px solid var(--bb-card-border);
-}
-
-.stat-number {
-  display: block;
-  font-size: clamp(var(--sl-text-xl), 3vw, var(--sl-text-2xl));
-  font-weight: 800;
-  color: var(--sl-color-accent);
-  line-height: 1.2;
-  letter-spacing: -0.025em;
-}
-
-.stat-label {
-  display: block;
-  font-size: var(--sl-text-xs);
-  color: var(--sl-color-gray-3);
-  margin-top: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 500;
-}
-
-/* ── Mobile responsiveness ── */
-
-@media (max-width: 50rem) {
-  .stats-bar {
-    padding: 0.75rem 0;
-  }
-
-  .stat-item {
-    min-width: 80px;
-    padding: 0.5rem 1rem;
-  }
-
-  .stat-item:not(:last-child)::after {
-    display: none;
-  }
-}
-
-@media (max-width: 30rem) {
-  .pillar-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .stat-item {
-    padding: 0.5rem 1rem;
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    text-align: left;
-  }
-
-  .stat-number {
-    font-size: var(--sl-text-lg);
-    min-width: 3rem;
-  }
-
-  .stat-label {
-    margin-top: 0;
-  }
-
-  .arch-diagram {
-    font-size: 0.7rem;
-    padding: 0.75rem;
-  }
+.preview h2 a {
+  text-decoration: none;
 }
 
 /* ── Reduced motion ── */
 
 @media (prefers-reduced-motion: reduce) {
-  .sl-link-card,
-  .pillar-card {
+  .sl-link-card {
     transition: none;
   }
 
-  .sl-link-card:hover,
-  .pillar-card:hover {
+  .sl-link-card:hover {
     transform: none;
   }
 }

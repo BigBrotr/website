@@ -3,101 +3,39 @@ title: BigBrotr
 description: Modular Nostr data archiving and monitoring system. Discover relays, track their health, and archive events across clearnet and overlay networks.
 template: splash
 hero:
-  tagline: Discover every Nostr relay. Monitor their health. Archive their events. Built with Python, PostgreSQL, and a diamond DAG architecture.
+  tagline: Modular infrastructure for Nostr relay discovery, health monitoring, and event archiving across clearnet and overlay networks.
   image:
     file: ../../assets/logo.webp
   actions:
-    - text: Get Started
-      link: /docs/getting-started/introduction/
+    - text: Docs
+      link: /docs/
       icon: right-arrow
       variant: primary
-    - text: View on GitHub
-      link: https://github.com/BigBrotr/bigbrotr
+    - text: Blog
+      link: /blog
+      icon: right-arrow
       variant: minimal
-      icon: external
 ---
 
 import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 
 ## Three Pillars
 
-<div class="pillar-grid">
-  <div class="pillar-card discovery">
-    <span class="pillar-icon">🔍</span>
-    <h3>Discovery</h3>
-    <p>Find relays across clearnet, Tor, I2P, and Lokinet. Bootstrap from seed files, discover new URLs from NIP-65 events and public APIs, then validate each candidate with a live WebSocket handshake.</p>
-  </div>
-  <div class="pillar-card monitoring">
-    <span class="pillar-icon">📡</span>
-    <h3>Health Monitoring</h3>
-    <p>Six NIP-66 health tests — RTT latency, SSL certificates, DNS resolution, geolocation, network reachability, and HTTP status — plus NIP-11 relay information document fetching.</p>
-  </div>
-  <div class="pillar-card archiving">
-    <span class="pillar-icon">🗄️</span>
-    <h3>Event Archiving</h3>
-    <p>Cursor-based synchronization collects events from validated relays. Content-addressed metadata deduplication via SHA-256 hashing ensures storage efficiency at scale.</p>
-  </div>
-</div>
-
----
-
-## Architecture
-
-Imports flow strictly downward through a **diamond DAG** — no cycles, no shortcuts:
-
-<div class="arch-diagram">{`              services              Orchestration
-             /   |   \\
-          core  nips  utils          Infrastructure
-             \\   |   /
-              models                 Pure domain types`}</div>
-
 <CardGrid>
-  <Card title="models" icon="document">
-    Pure frozen dataclasses representing Nostr concepts. Zero I/O, zero external
-    dependencies. Fail-fast validation and content-addressed deduplication.
+  <Card title="Discovery" icon="magnifier">
+    Find relays across clearnet, Tor, I2P, and Lokinet. Seed from known sources, discover from NIP-65 events, validate with WebSocket handshakes.
   </Card>
-  <Card title="core" icon="setting">
-    Connection pool with retry and backoff, database facade, abstract base
-    service, structured logging, and Prometheus metrics.
+  <Card title="Health Monitoring" icon="heart">
+    Six NIP-66 health tests — RTT, SSL, DNS, geolocation, network reachability, HTTP — plus NIP-11 relay information documents.
   </Card>
-  <Card title="nips" icon="approve-check-circle">
-    Protocol-aware I/O. NIP-11 fetches relay information documents; NIP-66 runs
-    six health tests (RTT, SSL, DNS, Geo, Net, HTTP).
-  </Card>
-  <Card title="utils" icon="random">
-    DNS resolution, Nostr key management, WebSocket and HTTP transport with SSL
-    fallback and SOCKS5 proxy support.
+  <Card title="Event Archiving" icon="open-book">
+    Cursor-based event synchronization from validated relays. Content-addressed metadata deduplication via SHA-256 hashing.
   </Card>
 </CardGrid>
 
 ---
 
 ## Services
-
-Six independent services communicate exclusively through the shared PostgreSQL database. No message queues, no inter-service APIs.
-
-<div class="stats-bar">
-  <div class="stat-item">
-    <span class="stat-number">6</span>
-    <span class="stat-label">Services</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-number">25</span>
-    <span class="stat-label">Stored Functions</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-number">11</span>
-    <span class="stat-label">Mat. Views</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-number">6</span>
-    <span class="stat-label">Tables</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-number">2400+</span>
-    <span class="stat-label">Tests</span>
-  </div>
-</div>
 
 <CardGrid>
   <LinkCard

@@ -1,0 +1,52 @@
+---
+title: Documentation
+description: BigBrotr documentation — architecture, services, database, configuration, and development guides.
+template: splash
+hero:
+  tagline: Everything you need to understand, deploy, and contribute to BigBrotr.
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+<CardGrid>
+  <LinkCard
+    title="Getting Started"
+    description="Introduction, quick start guide, and installation instructions."
+    href="/docs/getting-started/introduction/"
+  />
+  <LinkCard
+    title="Architecture"
+    description="Diamond DAG, package structure, and data flow."
+    href="/docs/architecture/overview/"
+  />
+  <LinkCard
+    title="Services"
+    description="Six independent services: Seeder, Finder, Validator, Monitor, Refresher, Synchronizer."
+    href="/docs/services/overview/"
+  />
+  <LinkCard
+    title="Database"
+    description="Schema, stored functions, and materialized views."
+    href="/docs/database/schema/"
+  />
+  <LinkCard
+    title="Configuration"
+    description="Core config, per-service YAML, and deployment options."
+    href="/docs/configuration/overview/"
+  />
+  <LinkCard
+    title="NIPs"
+    description="NIP-11 relay information and NIP-66 relay monitoring."
+    href="/docs/nips/nip-11/"
+  />
+  <LinkCard
+    title="Development"
+    description="Contributing guidelines, testing patterns, and code style."
+    href="/docs/development/contributing/"
+  />
+  <LinkCard
+    title="FAQ"
+    description="Frequently asked questions about BigBrotr."
+    href="/docs/resources/faq/"
+  />
+</CardGrid>
