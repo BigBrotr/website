@@ -15,7 +15,7 @@ const shouldRenderSearch =
 	<div class="title-wrapper sl-flex">
 		<SiteTitle />
 	</div>
-	<div class="sl-flex print:hidden">
+	<div class="sl-flex print:hidden search-wrapper">
 		{shouldRenderSearch && <Search />}
 	</div>
 	<div class="sl-flex print:hidden right-group">
@@ -76,10 +76,18 @@ const shouldRenderSearch =
 		opacity: 0.8;
 	}
 
-	/* Mobile: show only nav links, hide the rest */
+	/* Mobile: reorder so search is on the far right, show only nav links */
 	@media (max-width: 49.999rem) {
+		.right-group {
+			order: 2;
+		}
+
 		.right-group > :not(.nav-links) {
 			display: none;
+		}
+
+		.search-wrapper {
+			order: 3;
 		}
 	}
 
