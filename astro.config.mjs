@@ -21,6 +21,7 @@ export default defineConfig({
       components: {
         Header: "./src/components/Header.astro",
         ThemeSelect: "./src/components/ThemeSelect.astro",
+        MobileMenuFooter: "./src/components/MobileMenuFooter.astro",
       },
       customCss: ["./src/styles/custom.css"],
       plugins: [
