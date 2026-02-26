@@ -7,6 +7,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "BigBrotr",
+      favicon: "/favicon.png",
       logo: {
         src: "./src/assets/logo.webp",
         replacesTitle: true,
