@@ -1,0 +1,334 @@
+---
+import config from 'virtual:starlight/user-config';
+
+import LanguageSelect from 'virtual:starlight/components/LanguageSelect';
+import Search from 'virtual:starlight/components/Search';
+import SiteTitle from 'virtual:starlight/components/SiteTitle';
+import SocialIcons from 'virtual:starlight/components/SocialIcons';
+import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
+
+const shouldRenderSearch =
+	config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
+
+const hasSidebar = Astro.locals.starlightRoute?.hasSidebar ?? false;
+---
+
+<div class="header sl-flex">
+	<div class="title-wrapper sl-flex">
+		<SiteTitle />
+	</div>
+	<div class="sl-flex print:hidden search-wrapper">
+		{shouldRenderSearch && <Search />}
+	</div>
+	<div class="sl-flex print:hidden right-group">
+		<nav class="nav-links">
+			<a href="/docs/">Docs</a>
+			<a href="/blog">Blog</a>
+		</nav>
+		<div class="sl-flex icon-group">
+			<ThemeSelect />
+			<SocialIcons />
+		</div>
+		<LanguageSelect />
+	</div>
+</div>
+
+{!hasSidebar && (
+	<nav class="mobile-menu print:hidden" aria-label="Menu" data-expanded="false">
+		<button
+			class="sl-flex menu-btn"
+			aria-label="Menu"
+			aria-expanded="false"
+		>
+			<svg class="icon-open" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+				<path d="M3 7h18M3 12h18M3 17h18"/>
+			</svg>
+			<svg class="icon-close" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+				<path d="M18 6 6 18M6 6l12 12"/>
+			</svg>
+		</button>
+		<div class="menu-pane">
+			<div class="menu-content sl-flex">
+				<div class="menu-nav">
+					<a href="/docs/">Docs</a>
+					<a href="/blog">Blog</a>
+				</div>
+				<div class="menu-footer sl-flex">
+					<div class="sl-flex menu-social">
+						<SocialIcons />
+					</div>
+					<ThemeSelect />
+					<LanguageSelect />
+				</div>
+			</div>
+		</div>
+	</nav>
+)}
+
+<script>
+	document.querySelectorAll<HTMLElement>('.mobile-menu').forEach((menu) => {
+		const btn = menu.querySelector<HTMLButtonElement>('.menu-btn');
+		if (!btn) return;
+
+		function setExpanded(expanded: boolean) {
+			menu.dataset.expanded = String(expanded);
+			btn!.setAttribute('aria-expanded', String(expanded));
+			document.body.toggleAttribute('data-mobile-menu-expanded', expanded);
+		}
+
+		btn.addEventListener('click', () => {
+			setExpanded(menu.dataset.expanded !== 'true');
+		});
+
+		menu.addEventListener('keyup', (e) => {
+			if (e.code === 'Escape') {
+				setExpanded(false);
+				btn!.focus();
+			}
+		});
+
+		menu.querySelectorAll('a').forEach((link) => {
+			link.addEventListener('click', () => setExpanded(false));
+		});
+	});
+</script>
+
+<style>
+	/* ── Main header bar ── */
+
+	.header {
+		gap: var(--sl-nav-gap);
+		justify-content: space-between;
+		align-items: center;
+		height: 100%;
+	}
+
+	.title-wrapper {
+		overflow: clip;
+		padding: 0.25rem;
+		margin: -0.25rem;
+		min-width: 0;
+	}
+
+	.search-wrapper {
+		flex: 1;
+	}
+
+	/* ── Right group (visible on desktop only) ── */
+
+	.right-group {
+		gap: 1rem;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.nav-links {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.nav-links a {
+		color: var(--sl-color-text-accent);
+		font-weight: 600;
+		text-decoration: none;
+		font-size: var(--sl-text-sm);
+		white-space: nowrap;
+	}
+
+	.nav-links a:hover {
+		opacity: 0.66;
+	}
+
+	.icon-group {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+		flex-shrink: 0;
+		border-inline-start: 1px solid var(--sl-color-gray-5);
+		padding-inline-start: 0.75rem;
+	}
+
+	.icon-group :global(svg) {
+		width: 20px;
+		height: 20px;
+	}
+
+	/* ── Mobile menu (non-sidebar pages only) ── */
+
+	.mobile-menu {
+		display: contents;
+	}
+
+	.menu-btn,
+	.menu-pane {
+		display: none;
+	}
+
+	/* ── Mobile layout ── */
+
+	@media (max-width: 49.999rem) {
+		/* Hide desktop nav on mobile — everything moves to hamburger */
+		.right-group {
+			display: none;
+		}
+
+		/* Push search icon to the right, next to hamburger */
+		.search-wrapper {
+			flex: 0;
+			margin-inline-start: auto;
+		}
+
+		/* Leave room for hamburger button on non-sidebar pages */
+		:global(:root:not([data-has-sidebar])) .header {
+			padding-inline-end: calc(var(--sl-nav-gap) + var(--sl-menu-button-size));
+		}
+
+		/* ── Hamburger button ── */
+
+		.menu-btn {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: fixed;
+			top: calc((var(--sl-nav-height) - var(--sl-menu-button-size)) / 2);
+			inset-inline-end: var(--sl-nav-pad-x);
+			z-index: var(--sl-z-index-navbar);
+			border: 0;
+			border-radius: 50%;
+			width: var(--sl-menu-button-size);
+			height: var(--sl-menu-button-size);
+			padding: 0.5rem;
+			background-color: var(--sl-color-white);
+			color: var(--sl-color-black);
+			box-shadow: var(--sl-shadow-md);
+			cursor: pointer;
+		}
+
+		:global([data-theme='light']) .menu-btn {
+			background-color: var(--sl-color-black);
+			color: var(--sl-color-white);
+		}
+
+		.mobile-menu[data-expanded='true'] .menu-btn {
+			background-color: var(--sl-color-gray-2);
+			box-shadow: none;
+		}
+
+		:global([data-theme='light']) .mobile-menu[data-expanded='true'] .menu-btn {
+			background-color: var(--sl-color-gray-5);
+		}
+
+		/* ── Icon toggle ── */
+
+		.icon-open,
+		.icon-close {
+			display: none;
+		}
+
+		.mobile-menu:not([data-expanded='true']) .icon-open {
+			display: block;
+		}
+
+		.mobile-menu[data-expanded='true'] .icon-close {
+			display: block;
+		}
+
+		/* ── Slide-out pane ── */
+
+		.menu-pane {
+			display: block;
+			visibility: hidden;
+			position: fixed;
+			z-index: var(--sl-z-index-menu);
+			inset-block: var(--sl-nav-height) 0;
+			inset-inline-start: 0;
+			width: 100%;
+			background-color: var(--sl-color-black);
+			overflow-y: auto;
+		}
+
+		.mobile-menu[data-expanded='true'] .menu-pane {
+			visibility: visible;
+		}
+
+		/* ── Pane content ── */
+
+		.menu-content {
+			flex-direction: column;
+			padding: 1rem var(--sl-sidebar-pad-x, 1rem);
+			min-height: 100%;
+		}
+
+		.menu-nav {
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+			padding: 0.5rem 0 1rem;
+		}
+
+		.menu-nav a {
+			color: var(--sl-color-white);
+			font-weight: 600;
+			text-decoration: none;
+			font-size: var(--sl-text-base);
+			padding: 0.375rem 0;
+		}
+
+		.menu-nav a:hover {
+			color: var(--sl-color-text-accent);
+		}
+
+		.menu-footer {
+			margin-top: auto;
+			justify-content: space-between;
+			flex-wrap: wrap;
+			border-top: 1px solid var(--sl-color-gray-6);
+			column-gap: 1rem;
+			padding: 0.5rem 0;
+		}
+
+		.menu-social {
+			margin-inline-end: auto;
+			gap: 1rem;
+			align-items: center;
+			padding-block: 1rem;
+		}
+
+		.menu-social:empty {
+			display: none;
+		}
+	}
+
+	/* ── Desktop layout ── */
+
+	@media (min-width: 50rem) {
+		/* Sidebar pages: grid aligned to content area */
+		:global(:root[data-has-sidebar]) {
+			--__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
+		}
+		:global(:root:not([data-has-toc])) {
+			--__toc-width: 0rem;
+		}
+		:global(:root[data-has-sidebar]) .header {
+			--__sidebar-width: max(0rem, var(--sl-content-inline-start, 0rem) - var(--sl-nav-pad-x));
+			--__main-column-fr: calc(
+				(
+						100% + var(--__sidebar-pad, 0rem) - var(--__toc-width, var(--sl-sidebar-width)) -
+							(2 * var(--__toc-width, var(--sl-nav-pad-x))) - var(--sl-content-inline-start, 0rem) -
+							var(--sl-content-width)
+					) / 2
+			);
+			display: grid;
+			grid-template-columns:
+				minmax(
+					calc(var(--__sidebar-width) + max(0rem, var(--__main-column-fr) - var(--sl-nav-gap))),
+					auto
+				)
+				1fr
+				auto;
+			align-content: center;
+		}
+	}
+</style>

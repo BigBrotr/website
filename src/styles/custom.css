@@ -1,0 +1,117 @@
+/* BigBrotr Brand Theme */
+
+/* ── Color tokens ── */
+
+:root {
+  --sl-color-accent-low: #2d1065;
+  --sl-color-accent: #7c3aed;
+  --sl-color-accent-high: #c4b5fd;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #e5e7eb;
+  --sl-color-gray-2: #c9cdd3;
+  --sl-color-gray-3: #8e95a2;
+  --sl-color-gray-4: #585f6d;
+  --sl-color-gray-5: #3b3f4a;
+  --sl-color-gray-6: #25272e;
+  --sl-color-black: #151419;
+
+  /* Custom tokens */
+  --bb-card-bg: var(--sl-color-gray-6);
+  --bb-card-border: var(--sl-color-gray-5);
+  --bb-radius: 0.75rem;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #ede9fe;
+  --sl-color-accent: #6d28d9;
+  --sl-color-accent-high: #3b0764;
+  --sl-color-white: #151419;
+  --sl-color-gray-1: #25272e;
+  --sl-color-gray-2: #3b3f4a;
+  --sl-color-gray-3: #585f6d;
+  --sl-color-gray-4: #8e95a2;
+  --sl-color-gray-5: #c9cdd3;
+  --sl-color-gray-6: #e5e7eb;
+  --sl-color-black: #ffffff;
+
+  --bb-card-bg: #f5f3ff;
+  --bb-card-border: #ddd6fe;
+}
+
+/* ── Global enhancements ── */
+
+.sl-link-card {
+  border-color: var(--bb-card-border);
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+}
+
+.sl-link-card:hover {
+  border-color: var(--sl-color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgb(124 58 237 / 0.1);
+}
+
+.expressive-code {
+  border-radius: var(--bb-radius);
+}
+
+.site-title img {
+  height: 2rem;
+}
+
+/* ── Starlight CardGrid: equal-height cards ── */
+
+[class*="CardGrid"] > * {
+  align-self: stretch;
+}
+
+.card-grid > li,
+[class*="CardGrid"] > li {
+  display: flex;
+}
+
+.card-grid > li > *,
+[class*="CardGrid"] > li > * {
+  flex: 1;
+}
+
+/* ── Hero section ── */
+
+.hero {
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+
+.hero .tagline {
+  font-size: clamp(var(--sl-text-base), calc(0.0625rem + 2vw), var(--sl-text-xl));
+  color: var(--sl-color-gray-2);
+}
+
+/* ── Blog sidebar: hide RSS link (already in header social icons) ── */
+
+nav.sidebar li:has(a[href*="rss.xml"]) {
+  display: none;
+}
+
+/* ── Blog previews ── */
+
+/* Hide author section — single-author project */
+.preview .authors {
+  display: none;
+}
+
+.preview h2 a {
+  text-decoration: none;
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-link-card {
+    transition: none;
+  }
+
+  .sl-link-card:hover {
+    transform: none;
+  }
+}
