@@ -50,6 +50,6 @@ pool:
 
 ## Next Steps
 
-- [Core Configuration](/configuration/core/) — pool, Brotr, and timeout settings.
-- [Service Configuration](/configuration/services/) — per-service settings.
-- [Deployments](/configuration/deployments/) — BigBrotr vs LilBrotr.
+- [Core Configuration](/docs/configuration/core/) — pool, Brotr, and timeout settings.
+- [Service Configuration](/docs/configuration/services/) — per-service settings.
+- [Deployments](/docs/configuration/deployments/) — BigBrotr vs LilBrotr.

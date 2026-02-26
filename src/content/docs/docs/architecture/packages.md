@@ -115,5 +115,5 @@ NIP-11 produces `MetadataType.NIP11_INFO`.
 
 ## Next Steps
 
-- [Data Flow](/architecture/data-flow/) — how data moves through the system.
-- [Services Overview](/services/overview/) — detailed description of each service.
+- [Data Flow](/docs/architecture/data-flow/) — how data moves through the system.
+- [Services Overview](/docs/services/overview/) — detailed description of each service.

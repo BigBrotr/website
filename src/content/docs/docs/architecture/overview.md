@@ -85,6 +85,6 @@ Each service connects to PgBouncer, which provides connection pooling in transac
 
 ## Next Steps
 
-- [Package Structure](/architecture/packages/) — detailed breakdown of each package.
-- [Data Flow](/architecture/data-flow/) — how data moves through the system.
-- [Services Overview](/services/overview/) — what each service does.
+- [Package Structure](/docs/architecture/packages/) — detailed breakdown of each package.
+- [Data Flow](/docs/architecture/data-flow/) — how data moves through the system.
+- [Services Overview](/docs/services/overview/) — what each service does.

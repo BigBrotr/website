@@ -117,5 +117,5 @@ To create a custom deployment:
 
 ## Next Steps
 
-- [Quick Start](/getting-started/quick-start/) — get a deployment running.
-- [Core Configuration](/configuration/core/) — detailed config parameters.
+- [Quick Start](/docs/getting-started/quick-start/) — get a deployment running.
+- [Core Configuration](/docs/configuration/core/) — detailed config parameters.

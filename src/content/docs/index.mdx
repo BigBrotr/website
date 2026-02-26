@@ -8,7 +8,7 @@ hero:
     file: ../../assets/logo.webp
   actions:
     - text: Get Started
-      link: /getting-started/introduction/
+      link: /docs/getting-started/introduction/
       icon: right-arrow
       variant: primary
     - text: View on GitHub
@@ -104,32 +104,32 @@ PostgreSQL database. No message queues, no inter-service APIs.
   <LinkCard
     title="Seeder"
     description="One-shot bootstrap from seed files and known relay lists."
-    href="/services/seeder/"
+    href="/docs/services/seeder/"
   />
   <LinkCard
     title="Finder"
     description="Discover relay URLs from NIP-65 events and public APIs."
-    href="/services/finder/"
+    href="/docs/services/finder/"
   />
   <LinkCard
     title="Validator"
     description="WebSocket handshake test, promotes candidates to relays."
-    href="/services/validator/"
+    href="/docs/services/validator/"
   />
   <LinkCard
     title="Monitor"
     description="NIP-11 and NIP-66 health checks with event publishing."
-    href="/services/monitor/"
+    href="/docs/services/monitor/"
   />
   <LinkCard
     title="Refresher"
     description="Orchestrates materialized view refresh on schedule."
-    href="/services/refresher/"
+    href="/docs/services/refresher/"
   />
   <LinkCard
     title="Synchronizer"
     description="Cursor-based event collection from validated relays."
-    href="/services/synchronizer/"
+    href="/docs/services/synchronizer/"
   />
 </CardGrid>
 
@@ -153,7 +153,7 @@ python -m bigbrotr finder --log-level DEBUG
 <LinkCard
   title="Full Quick Start Guide"
   description="Step-by-step instructions with Docker Compose and configuration."
-  href="/getting-started/quick-start/"
+  href="/docs/getting-started/quick-start/"
 />
 
 ---
@@ -164,31 +164,21 @@ python -m bigbrotr finder --log-level DEBUG
   <LinkCard
     title="Architecture Deep Dive"
     description="Diamond DAG, package responsibilities, and design principles."
-    href="/architecture/overview/"
+    href="/docs/architecture/overview/"
   />
   <LinkCard
     title="Database Schema"
     description="Tables, stored functions, and materialized views."
-    href="/database/schema/"
+    href="/docs/database/schema/"
   />
   <LinkCard
     title="Configuration Guide"
     description="YAML configs, environment variables, and deployments."
-    href="/configuration/overview/"
+    href="/docs/configuration/overview/"
   />
   <LinkCard
     title="Contributing"
     description="Development setup, testing, and coding standards."
-    href="/development/contributing/"
+    href="/docs/development/contributing/"
   />
 </CardGrid>
-
----
-
-## External Resources
-
-<div class="external-links">
-  <a class="external-link" href="https://github.com/BigBrotr/bigbrotr" target="_blank">GitHub Repository</a>
-  <a class="external-link" href="https://pypi.org/project/bigbrotr/" target="_blank">Python Package (PyPI)</a>
-  <a class="external-link" href="https://presentation.bigbrotr.com" target="_blank">Presentation Slides</a>
-</div>

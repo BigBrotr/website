@@ -19,8 +19,13 @@ export default defineConfig({
         },
         {
           icon: "external",
-          label: "Presentation",
-          href: "https://presentation.bigbrotr.com",
+          label: "Deck",
+          href: "https://deck.bigbrotr.com",
+        },
+        {
+          icon: "external",
+          label: "API Docs",
+          href: "https://docs.bigbrotr.com",
         },
       ],
       customCss: ["./src/styles/custom.css"],
@@ -52,46 +57,46 @@ export default defineConfig({
         {
           label: "Getting Started",
           items: [
-            { label: "Introduction", slug: "getting-started/introduction" },
-            { label: "Quick Start", slug: "getting-started/quick-start" },
-            { label: "Installation", slug: "getting-started/installation" },
+            { label: "Introduction", slug: "docs/getting-started/introduction" },
+            { label: "Quick Start", slug: "docs/getting-started/quick-start" },
+            { label: "Installation", slug: "docs/getting-started/installation" },
           ],
         },
         {
           label: "Architecture",
           items: [
-            { label: "Overview", slug: "architecture/overview" },
-            { label: "Package Structure", slug: "architecture/packages" },
-            { label: "Data Flow", slug: "architecture/data-flow" },
+            { label: "Overview", slug: "docs/architecture/overview" },
+            { label: "Package Structure", slug: "docs/architecture/packages" },
+            { label: "Data Flow", slug: "docs/architecture/data-flow" },
           ],
         },
         {
           label: "Services",
           items: [
-            { label: "Overview", slug: "services/overview" },
-            { label: "Seeder", slug: "services/seeder" },
-            { label: "Finder", slug: "services/finder" },
-            { label: "Validator", slug: "services/validator" },
-            { label: "Monitor", slug: "services/monitor" },
-            { label: "Refresher", slug: "services/refresher" },
-            { label: "Synchronizer", slug: "services/synchronizer" },
+            { label: "Overview", slug: "docs/services/overview" },
+            { label: "Seeder", slug: "docs/services/seeder" },
+            { label: "Finder", slug: "docs/services/finder" },
+            { label: "Validator", slug: "docs/services/validator" },
+            { label: "Monitor", slug: "docs/services/monitor" },
+            { label: "Refresher", slug: "docs/services/refresher" },
+            { label: "Synchronizer", slug: "docs/services/synchronizer" },
           ],
         },
         {
           label: "Database",
           items: [
-            { label: "Schema", slug: "database/schema" },
-            { label: "Stored Functions", slug: "database/procedures" },
-            { label: "Materialized Views", slug: "database/views" },
+            { label: "Schema", slug: "docs/database/schema" },
+            { label: "Stored Functions", slug: "docs/database/procedures" },
+            { label: "Materialized Views", slug: "docs/database/views" },
           ],
         },
         {
           label: "Configuration",
           items: [
-            { label: "Overview", slug: "configuration/overview" },
-            { label: "Core", slug: "configuration/core" },
-            { label: "Services", slug: "configuration/services" },
-            { label: "Deployments", slug: "configuration/deployments" },
+            { label: "Overview", slug: "docs/configuration/overview" },
+            { label: "Core", slug: "docs/configuration/core" },
+            { label: "Services", slug: "docs/configuration/services" },
+            { label: "Deployments", slug: "docs/configuration/deployments" },
           ],
         },
         {
@@ -99,24 +104,24 @@ export default defineConfig({
           items: [
             {
               label: "NIP-11: Relay Information",
-              slug: "nips/nip-11",
+              slug: "docs/nips/nip-11",
             },
             {
               label: "NIP-66: Relay Monitoring",
-              slug: "nips/nip-66",
+              slug: "docs/nips/nip-66",
             },
           ],
         },
         {
           label: "Development",
           items: [
-            { label: "Contributing", slug: "development/contributing" },
-            { label: "Testing", slug: "development/testing" },
+            { label: "Contributing", slug: "docs/development/contributing" },
+            { label: "Testing", slug: "docs/development/testing" },
           ],
         },
         {
           label: "Resources",
-          items: [{ label: "FAQ", slug: "resources/faq" }],
+          items: [{ label: "FAQ", slug: "docs/resources/faq" }],
         },
       ],
     }),

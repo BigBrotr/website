@@ -51,8 +51,8 @@ Yes. Install from source with `uv sync` and run services directly with `python -
 
 ### How do I add a new deployment?
 
-Copy an existing deployment directory, modify the YAML configs, and build with `docker build --build-arg DEPLOYMENT=yourdeployment`. See [Deployments](/configuration/deployments/).
+Copy an existing deployment directory, modify the YAML configs, and build with `docker build --build-arg DEPLOYMENT=yourdeployment`. See [Deployments](/docs/configuration/deployments/).
 
 ### How do I contribute?
 
-See the [Contributing](/development/contributing/) guide for development setup, coding standards, and PR workflow.
+See the [Contributing](/docs/development/contributing/) guide for development setup, coding standards, and PR workflow.

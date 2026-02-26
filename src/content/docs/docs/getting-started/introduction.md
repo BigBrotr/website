@@ -51,6 +51,6 @@ The Synchronizer uses cursor-based pagination to collect and archive Nostr event
 
 ## Next Steps
 
-- [Quick Start](/getting-started/quick-start/) — get BigBrotr running in minutes with Docker Compose.
-- [Installation](/getting-started/installation/) — install from source for development.
-- [Architecture Overview](/architecture/overview/) — understand the diamond DAG design.
+- [Quick Start](/docs/getting-started/quick-start/) — get BigBrotr running in minutes with Docker Compose.
+- [Installation](/docs/getting-started/installation/) — install from source for development.
+- [Architecture Overview](/docs/architecture/overview/) — understand the diamond DAG design.

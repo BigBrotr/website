@@ -107,6 +107,6 @@ Metrics are disabled by default. When enabled, each service exposes a `/metrics`
 
 ## Next Steps
 
-- [Architecture Overview](/architecture/overview/) — understand how the system is designed.
-- [Configuration Guide](/configuration/overview/) — customize timeouts, batch sizes, and network settings.
-- [Deployments](/configuration/deployments/) — learn about BigBrotr vs LilBrotr configurations.
+- [Architecture Overview](/docs/architecture/overview/) — understand how the system is designed.
+- [Configuration Guide](/docs/configuration/overview/) — customize timeouts, batch sizes, and network settings.
+- [Deployments](/docs/configuration/deployments/) — learn about BigBrotr vs LilBrotr configurations.

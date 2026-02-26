@@ -79,5 +79,5 @@ All functions use `SECURITY INVOKER` (PostgreSQL default). They execute with the
 
 ## Next Steps
 
-- [Materialized Views](/database/views/) — the 11 pre-computed analytics views.
-- [Schema Overview](/database/schema/) — table definitions and relationships.
+- [Materialized Views](/docs/database/views/) — the 11 pre-computed analytics views.
+- [Schema Overview](/docs/database/schema/) — table definitions and relationships.

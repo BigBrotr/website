@@ -76,5 +76,5 @@ pool:
 
 ## Next Steps
 
-- [Service Configuration](/configuration/services/) — per-service settings.
-- [Deployments](/configuration/deployments/) — BigBrotr vs LilBrotr.
+- [Service Configuration](/docs/configuration/services/) — per-service settings.
+- [Deployments](/docs/configuration/deployments/) — BigBrotr vs LilBrotr.

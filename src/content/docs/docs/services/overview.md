@@ -9,12 +9,12 @@ BigBrotr runs six independent services. Each service is a separate process with 
 
 | Service | Mode | Responsibility |
 |---------|------|---------------|
-| [Seeder](/services/seeder/) | One-shot | Load relay URLs from seed files and known relay lists |
-| [Finder](/services/finder/) | Continuous | Discover new relay URLs from NIP-65 events and public APIs |
-| [Validator](/services/validator/) | Continuous | Test WebSocket connectivity and promote candidates to relay table |
-| [Monitor](/services/monitor/) | Continuous | NIP-11 + NIP-66 health checks, optionally publish monitoring events |
-| [Refresher](/services/refresher/) | Scheduled | Orchestrate materialized view refresh cycles |
-| [Synchronizer](/services/synchronizer/) | Continuous | Cursor-based event collection from validated relays |
+| [Seeder](/docs/services/seeder/) | One-shot | Load relay URLs from seed files and known relay lists |
+| [Finder](/docs/services/finder/) | Continuous | Discover new relay URLs from NIP-65 events and public APIs |
+| [Validator](/docs/services/validator/) | Continuous | Test WebSocket connectivity and promote candidates to relay table |
+| [Monitor](/docs/services/monitor/) | Continuous | NIP-11 + NIP-66 health checks, optionally publish monitoring events |
+| [Refresher](/docs/services/refresher/) | Scheduled | Orchestrate materialized view refresh cycles |
+| [Synchronizer](/docs/services/synchronizer/) | Continuous | Cursor-based event collection from validated relays |
 
 ## Independence
 

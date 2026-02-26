@@ -147,4 +147,4 @@ These tests verify stored functions, cascade functions, and materialized views a
 
 ## Next Steps
 
-- [Contributing](/development/contributing/) — development workflow and coding standards.
+- [Contributing](/docs/development/contributing/) — development workflow and coding standards.

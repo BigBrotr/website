@@ -115,5 +115,5 @@ PRs target `develop`. Include:
 
 ## Next Steps
 
-- [Testing](/development/testing/) — how to write and run tests.
-- [Architecture Overview](/architecture/overview/) — understand the codebase structure.
+- [Testing](/docs/development/testing/) — how to write and run tests.
+- [Architecture Overview](/docs/architecture/overview/) — understand the codebase structure.

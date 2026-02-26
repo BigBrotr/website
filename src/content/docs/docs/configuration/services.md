@@ -188,5 +188,5 @@ All configurations are validated at load time through Pydantic. Invalid values (
 
 ## Next Steps
 
-- [Core Configuration](/configuration/core/) — pool, Brotr, and timeout settings.
-- [Deployments](/configuration/deployments/) — BigBrotr vs LilBrotr.
+- [Core Configuration](/docs/configuration/core/) — pool, Brotr, and timeout settings.
+- [Deployments](/docs/configuration/deployments/) — BigBrotr vs LilBrotr.

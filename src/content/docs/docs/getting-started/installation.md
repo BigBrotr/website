@@ -3,7 +3,7 @@ title: Installation
 description: Install BigBrotr from source for development and contribution.
 ---
 
-This guide covers installing BigBrotr from source using `uv`, the fast Python package manager. For production deployments, see the [Quick Start](/getting-started/quick-start/) guide with Docker Compose.
+This guide covers installing BigBrotr from source using `uv`, the fast Python package manager. For production deployments, see the [Quick Start](/docs/getting-started/quick-start/) guide with Docker Compose.
 
 ## Prerequisites
 
@@ -100,6 +100,6 @@ Every service accepts these CLI flags:
 
 ## Next Steps
 
-- [Contributing](/development/contributing/) — coding standards, testing, and PR workflow.
-- [Testing](/development/testing/) — how to write and run tests.
-- [Architecture Overview](/architecture/overview/) — understand the codebase structure.
+- [Contributing](/docs/development/contributing/) — coding standards, testing, and PR workflow.
+- [Testing](/docs/development/testing/) — how to write and run tests.
+- [Architecture Overview](/docs/architecture/overview/) — understand the codebase structure.

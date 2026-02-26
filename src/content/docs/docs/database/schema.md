@@ -144,5 +144,5 @@ Two cascade functions handle atomic multi-table inserts:
 
 ## Next Steps
 
-- [Stored Functions](/database/procedures/) — the 25 database functions.
-- [Materialized Views](/database/views/) — 11 pre-computed analytics views.
+- [Stored Functions](/docs/database/procedures/) — the 25 database functions.
+- [Materialized Views](/docs/database/views/) — 11 pre-computed analytics views.

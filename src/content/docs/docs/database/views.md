@@ -3,7 +3,7 @@ title: Materialized Views
 description: BigBrotr's 11 materialized views for pre-computed analytics.
 ---
 
-BigBrotr maintains 11 materialized views that pre-compute expensive analytics queries. These views are refreshed periodically by the [Refresher](/services/refresher/) service using `REFRESH MATERIALIZED VIEW CONCURRENTLY`.
+BigBrotr maintains 11 materialized views that pre-compute expensive analytics queries. These views are refreshed periodically by the [Refresher](/docs/services/refresher/) service using `REFRESH MATERIALIZED VIEW CONCURRENTLY`.
 
 ## View Catalog
 
@@ -75,5 +75,5 @@ Both BigBrotr and LilBrotr deployments include all 11 materialized views. The sc
 
 ## Next Steps
 
-- [Refresher Service](/services/refresher/) — the service that manages refresh cycles.
-- [Schema Overview](/database/schema/) — table definitions and relationships.
+- [Refresher Service](/docs/services/refresher/) — the service that manages refresh cycles.
+- [Schema Overview](/docs/database/schema/) — table definitions and relationships.
