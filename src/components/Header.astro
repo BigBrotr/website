@@ -11,10 +11,6 @@ const shouldRenderSearch =
 	config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
 ---
 
-<!--
-	Desktop:  Logo  |  ─── Search ───  |  Docs · Blog │ 🌗 🐙 📡
-	Mobile:   Logo  |  Docs · Blog │ 🌗 🐙 📡  |  🔍
--->
 <div class="header">
 	<div class="title-wrapper sl-flex">
 		<SiteTitle />
@@ -27,7 +23,7 @@ const shouldRenderSearch =
 			<a href="/docs/">Docs</a>
 			<a href="/blog">Blog</a>
 		</nav>
-		<div class="sl-flex icon-group">
+		<div class="icon-group">
 			<ThemeSelect />
 			<SocialIcons />
 		</div>
@@ -51,9 +47,12 @@ const shouldRenderSearch =
 		min-width: 0;
 	}
 
+	/* ── Right group ── */
+
 	.right-group {
 		gap: 1rem;
 		align-items: center;
+		flex-shrink: 0;
 	}
 
 	/* ── Nav links ── */
@@ -61,7 +60,8 @@ const shouldRenderSearch =
 	.nav-links {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.75rem;
+		flex-shrink: 0;
 	}
 
 	.nav-links a {
@@ -69,30 +69,44 @@ const shouldRenderSearch =
 		font-weight: 600;
 		text-decoration: none;
 		font-size: var(--sl-text-sm);
+		white-space: nowrap;
 	}
 
 	.nav-links a:hover {
-		opacity: 0.8;
+		opacity: 0.66;
 	}
 
-	/* ── Icon group (theme + social) ── */
+	/* ── Icon group (theme · github · rss) ── */
 
 	.icon-group {
+		display: flex;
 		gap: 0.75rem;
 		align-items: center;
+		flex-shrink: 0;
 		border-inline-start: 1px solid var(--sl-color-gray-5);
 		padding-inline-start: 0.75rem;
 	}
 
-	/* ── Mobile layout ── */
+	/* Make social icons 20px to match theme toggle */
+	.icon-group :global(svg) {
+		width: 20px;
+		height: 20px;
+	}
+
+	/* ── Mobile ── */
 
 	@media (max-width: 49.999rem) {
+		.header {
+			gap: 0.5rem;
+		}
+
 		.right-group {
-			gap: 0.75rem;
+			order: 2;
+			gap: 0.5rem;
 		}
 
 		.nav-links {
-			gap: 0.75rem;
+			gap: 0.5rem;
 		}
 
 		.icon-group {
@@ -103,13 +117,9 @@ const shouldRenderSearch =
 		.search-wrapper {
 			order: 3;
 		}
-
-		.right-group {
-			order: 2;
-		}
 	}
 
-	/* ── Desktop grid layout ── */
+	/* ── Desktop grid ── */
 
 	@media (min-width: 50rem) {
 		:global(:root[data-has-sidebar]) {
