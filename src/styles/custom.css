@@ -87,6 +87,24 @@
   color: var(--sl-color-gray-2);
 }
 
+/* ── Header: show nav links on mobile ── */
+
+@media (max-width: 49.999rem) {
+  .header .right-group {
+    display: flex !important;
+  }
+
+  .header .social-icons {
+    display: none;
+  }
+}
+
+/* ── Blog sidebar: hide RSS link (already in header social icons) ── */
+
+nav.sidebar li:has(a[href*="rss.xml"]) {
+  display: none;
+}
+
 /* ── Blog previews ── */
 
 /* Hide author section — single-author project */
