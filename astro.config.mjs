@@ -17,20 +17,7 @@ export default defineConfig({
           label: "GitHub",
           href: "https://github.com/BigBrotr/bigbrotr",
         },
-        {
-          icon: "external",
-          label: "Deck",
-          href: "https://deck.bigbrotr.com",
-        },
-        {
-          icon: "external",
-          label: "API Docs",
-          href: "https://docs.bigbrotr.com",
-        },
       ],
-      components: {
-        Header: "./src/components/Header.astro",
-      },
       customCss: ["./src/styles/custom.css"],
       plugins: [
         starlightBlog({
