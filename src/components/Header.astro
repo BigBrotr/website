@@ -119,16 +119,22 @@ const shouldRenderSearch =
 		}
 	}
 
-	/* ── Desktop grid ── */
+	/* ── Desktop ── */
 
 	@media (min-width: 50rem) {
+		/* Non-sidebar pages: flex with expanding search */
+		.search-wrapper {
+			flex: 1;
+		}
+
+		/* Sidebar pages: grid aligned to content area */
 		:global(:root[data-has-sidebar]) {
 			--__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
 		}
 		:global(:root:not([data-has-toc])) {
 			--__toc-width: 0rem;
 		}
-		.header {
+		:global(:root[data-has-sidebar]) .header {
 			--__sidebar-width: max(0rem, var(--sl-content-inline-start, 0rem) - var(--sl-nav-pad-x));
 			--__main-column-fr: calc(
 				(
