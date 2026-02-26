@@ -11,6 +11,10 @@ const shouldRenderSearch =
 	config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
 ---
 
+<!--
+	Desktop:  Logo  |  ─── Search ───  |  Docs · Blog │ 🌗 🐙 📡
+	Mobile:   Logo  |  Docs · Blog │ 🌗 🐙 📡  |  🔍
+-->
 <div class="header">
 	<div class="title-wrapper sl-flex">
 		<SiteTitle />
@@ -19,14 +23,14 @@ const shouldRenderSearch =
 		{shouldRenderSearch && <Search />}
 	</div>
 	<div class="sl-flex print:hidden right-group">
-		<div class="sl-flex social-icons">
-			<SocialIcons />
-		</div>
 		<nav class="nav-links">
 			<a href="/docs/">Docs</a>
 			<a href="/blog">Blog</a>
 		</nav>
-		<ThemeSelect />
+		<div class="sl-flex icon-group">
+			<ThemeSelect />
+			<SocialIcons />
+		</div>
 		<LanguageSelect />
 	</div>
 </div>
@@ -47,17 +51,12 @@ const shouldRenderSearch =
 		min-width: 0;
 	}
 
-	.right-group,
-	.social-icons {
+	.right-group {
 		gap: 1rem;
 		align-items: center;
 	}
 
-	.social-icons::after {
-		content: '';
-		height: 2rem;
-		border-inline-end: 1px solid var(--sl-color-gray-5);
-	}
+	/* ── Nav links ── */
 
 	.nav-links {
 		display: flex;
@@ -76,20 +75,41 @@ const shouldRenderSearch =
 		opacity: 0.8;
 	}
 
-	/* Mobile: reorder so search is on the far right, show only nav links */
+	/* ── Icon group (theme + social) ── */
+
+	.icon-group {
+		gap: 0.75rem;
+		align-items: center;
+		border-inline-start: 1px solid var(--sl-color-gray-5);
+		padding-inline-start: 0.75rem;
+	}
+
+	/* ── Mobile layout ── */
+
 	@media (max-width: 49.999rem) {
 		.right-group {
-			order: 2;
+			gap: 0.75rem;
 		}
 
-		.right-group > :not(.nav-links) {
-			display: none;
+		.nav-links {
+			gap: 0.75rem;
+		}
+
+		.icon-group {
+			gap: 0.5rem;
+			padding-inline-start: 0.5rem;
 		}
 
 		.search-wrapper {
 			order: 3;
 		}
+
+		.right-group {
+			order: 2;
+		}
 	}
+
+	/* ── Desktop grid layout ── */
 
 	@media (min-width: 50rem) {
 		:global(:root[data-has-sidebar]) {
