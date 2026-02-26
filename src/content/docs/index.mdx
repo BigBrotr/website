@@ -3,7 +3,7 @@ title: BigBrotr
 description: Modular Nostr data archiving and monitoring system. Discover relays, track their health, and archive events across clearnet and overlay networks.
 template: splash
 hero:
-  tagline: Modular infrastructure for Nostr relay discovery, health monitoring, and event archiving. Built with Python and PostgreSQL.
+  tagline: Discover every Nostr relay. Monitor their health. Archive their events. Built with Python, PostgreSQL, and a diamond DAG architecture.
   image:
     file: ../../assets/logo.webp
   actions:
@@ -17,22 +17,25 @@ hero:
       icon: external
 ---
 
-import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+import { LinkCard, CardGrid } from "@astrojs/starlight/components";
 
 ## Three Pillars
 
 <div class="pillar-grid">
-  <div class="pillar-card">
+  <div class="pillar-card discovery">
+    <span class="pillar-icon">🔍</span>
     <h3>Discovery</h3>
-    <p>Find relays across clearnet, Tor, I2P, and Lokinet. Seed from known sources, discover new relays from NIP-65 events and public APIs, then validate each candidate with a live WebSocket handshake.</p>
+    <p>Find relays across clearnet, Tor, I2P, and Lokinet. Bootstrap from seed files, discover new URLs from NIP-65 events and public APIs, then validate each candidate with a live WebSocket handshake.</p>
   </div>
-  <div class="pillar-card">
+  <div class="pillar-card monitoring">
+    <span class="pillar-icon">📡</span>
     <h3>Health Monitoring</h3>
-    <p>Continuous health checks using NIP-11 relay information documents and NIP-66 monitoring events. Measures RTT latency, SSL certificate validity, DNS resolution, geographic location, network reachability, and HTTP status.</p>
+    <p>Six NIP-66 health tests — RTT latency, SSL certificates, DNS resolution, geolocation, network reachability, and HTTP status — plus NIP-11 relay information document fetching.</p>
   </div>
-  <div class="pillar-card">
+  <div class="pillar-card archiving">
+    <span class="pillar-icon">🗄️</span>
     <h3>Event Archiving</h3>
-    <p>Cursor-based event synchronization collects and archives Nostr events from validated relays. Content-addressed metadata deduplication ensures storage efficiency through SHA-256 hashing.</p>
+    <p>Cursor-based synchronization collects events from validated relays. Content-addressed metadata deduplication via SHA-256 hashing ensures storage efficiency at scale.</p>
   </div>
 </div>
 
@@ -40,44 +43,40 @@ import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 
 ## Architecture
 
-BigBrotr follows a **diamond DAG** dependency structure. Imports flow strictly
-downward, ensuring clean separation of concerns:
+Imports flow strictly downward through a **diamond DAG** — no cycles, no shortcuts:
 
-<div class="arch-diagram">
-{`            services          Orchestration
-           /   |   \\
-        core  nips  utils      Infrastructure
-           \\   |   /
-            models             Pure domain types`}
+<div class="arch-diagram">{`              services              Orchestration
+             /   |   \\
+          core  nips  utils          Infrastructure
+             \\   |   /
+              models                 Pure domain types`}</div>
+
+<div class="pkg-grid">
+  <div class="pkg-card">
+    <div class="pkg-name">models</div>
+    <p class="pkg-desc">Frozen dataclasses for Nostr concepts. Zero I/O. Fail-fast validation and content-addressed deduplication.</p>
+  </div>
+  <div class="pkg-card">
+    <div class="pkg-name">core</div>
+    <p class="pkg-desc">Connection pool with retry/backoff, database facade, base service, structured logging, Prometheus metrics.</p>
+  </div>
+  <div class="pkg-card">
+    <div class="pkg-name">nips</div>
+    <p class="pkg-desc">Protocol-aware I/O. NIP-11 relay info fetch; NIP-66 runs six health tests (RTT, SSL, DNS, Geo, Net, HTTP).</p>
+  </div>
+  <div class="pkg-card">
+    <div class="pkg-name">utils</div>
+    <p class="pkg-desc">DNS resolution, Nostr key management, WebSocket/HTTP transport with SSL fallback and SOCKS5 proxy support.</p>
+  </div>
 </div>
-
-<CardGrid>
-  <Card title="models" icon="document">
-    Pure frozen dataclasses representing Nostr concepts. Zero I/O, zero external
-    dependencies. Fail-fast validation and content-addressed deduplication.
-  </Card>
-  <Card title="core" icon="setting">
-    Connection pool with retry and backoff, database facade, abstract base
-    service, structured logging, and Prometheus metrics.
-  </Card>
-  <Card title="nips" icon="approve-check-circle">
-    Protocol-aware I/O. NIP-11 fetches relay information documents; NIP-66 runs
-    six health tests (RTT, SSL, DNS, Geo, Net, HTTP).
-  </Card>
-  <Card title="utils" icon="random">
-    DNS resolution, Nostr key management, WebSocket and HTTP transport with SSL
-    fallback and SOCKS5 proxy support.
-  </Card>
-</CardGrid>
 
 ---
 
-## Six Independent Services
+## Service Pipeline
 
-All services run independently and communicate exclusively through the shared
-PostgreSQL database. No message queues, no inter-service APIs.
+Six independent services communicate exclusively through the shared PostgreSQL database.
 
-<div class="stats-grid">
+<div class="stats-bar">
   <div class="stat-item">
     <span class="stat-number">6</span>
     <span class="stat-label">Services</span>
@@ -88,7 +87,7 @@ PostgreSQL database. No message queues, no inter-service APIs.
   </div>
   <div class="stat-item">
     <span class="stat-number">11</span>
-    <span class="stat-label">Materialized Views</span>
+    <span class="stat-label">Mat. Views</span>
   </div>
   <div class="stat-item">
     <span class="stat-number">6</span>
@@ -100,49 +99,53 @@ PostgreSQL database. No message queues, no inter-service APIs.
   </div>
 </div>
 
-<CardGrid>
-  <LinkCard
-    title="Seeder"
-    description="One-shot bootstrap from seed files and known relay lists."
-    href="/docs/services/seeder/"
-  />
-  <LinkCard
-    title="Finder"
-    description="Discover relay URLs from NIP-65 events and public APIs."
-    href="/docs/services/finder/"
-  />
-  <LinkCard
-    title="Validator"
-    description="WebSocket handshake test, promotes candidates to relays."
-    href="/docs/services/validator/"
-  />
-  <LinkCard
-    title="Monitor"
-    description="NIP-11 and NIP-66 health checks with event publishing."
-    href="/docs/services/monitor/"
-  />
-  <LinkCard
-    title="Refresher"
-    description="Orchestrates materialized view refresh on schedule."
-    href="/docs/services/refresher/"
-  />
-  <LinkCard
-    title="Synchronizer"
-    description="Cursor-based event collection from validated relays."
-    href="/docs/services/synchronizer/"
-  />
-</CardGrid>
+<div class="pipeline-grid">
+  <a href="/docs/services/seeder/" class="pipeline-step">
+    <span class="step-num">Step 1</span>
+    <span class="step-name">Seeder</span>
+    <span class="step-desc">Bootstrap from seed files and known relay lists</span>
+    <span class="step-mode one-shot">one-shot</span>
+  </a>
+  <a href="/docs/services/finder/" class="pipeline-step">
+    <span class="step-num">Step 2</span>
+    <span class="step-name">Finder</span>
+    <span class="step-desc">Discover relay URLs from NIP-65 events and APIs</span>
+    <span class="step-mode continuous">continuous</span>
+  </a>
+  <a href="/docs/services/validator/" class="pipeline-step">
+    <span class="step-num">Step 3</span>
+    <span class="step-name">Validator</span>
+    <span class="step-desc">WebSocket handshake test, promote to relay table</span>
+    <span class="step-mode continuous">continuous</span>
+  </a>
+  <a href="/docs/services/monitor/" class="pipeline-step">
+    <span class="step-num">Step 4</span>
+    <span class="step-name">Monitor</span>
+    <span class="step-desc">NIP-11 + NIP-66 health checks, publish events</span>
+    <span class="step-mode continuous">continuous</span>
+  </a>
+  <a href="/docs/services/refresher/" class="pipeline-step">
+    <span class="step-num">Step 5</span>
+    <span class="step-name">Refresher</span>
+    <span class="step-desc">Orchestrate materialized view refresh cycles</span>
+    <span class="step-mode scheduled">scheduled</span>
+  </a>
+  <a href="/docs/services/synchronizer/" class="pipeline-step">
+    <span class="step-num">Step 6</span>
+    <span class="step-name">Synchronizer</span>
+    <span class="step-desc">Cursor-based event collection from relays</span>
+    <span class="step-mode continuous">continuous</span>
+  </a>
+</div>
 
 ---
 
 ## Quick Start
 
 ```bash
-# Clone the repository
+# Clone and start the full stack
 git clone https://github.com/BigBrotr/bigbrotr.git
 cd bigbrotr/deployments/bigbrotr
-
-# Start the full stack
 docker compose up -d
 
 # Run a single service

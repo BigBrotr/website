@@ -28,6 +28,9 @@ export default defineConfig({
           href: "https://docs.bigbrotr.com",
         },
       ],
+      components: {
+        Header: "./src/components/Header.astro",
+      },
       customCss: ["./src/styles/custom.css"],
       plugins: [
         starlightBlog({

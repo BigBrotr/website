@@ -1,5 +1,7 @@
 /* BigBrotr Brand Theme */
 
+/* ── Color tokens ── */
+
 :root {
   --sl-color-accent-low: #2d1065;
   --sl-color-accent: #7c3aed;
@@ -12,6 +14,14 @@
   --sl-color-gray-5: #3b3f4a;
   --sl-color-gray-6: #25272e;
   --sl-color-black: #151419;
+
+  /* Custom tokens */
+  --bb-gradient-start: #7c3aed;
+  --bb-gradient-end: #a78bfa;
+  --bb-card-bg: var(--sl-color-gray-6);
+  --bb-card-border: var(--sl-color-gray-5);
+  --bb-radius: 0.75rem;
+  --bb-radius-sm: 0.5rem;
 }
 
 :root[data-theme="light"] {
@@ -26,101 +36,111 @@
   --sl-color-gray-5: #c9cdd3;
   --sl-color-gray-6: #e5e7eb;
   --sl-color-black: #ffffff;
+
+  --bb-gradient-start: #6d28d9;
+  --bb-gradient-end: #7c3aed;
+  --bb-card-bg: #f5f3ff;
+  --bb-card-border: #ddd6fe;
 }
 
-/* Landing page hero enhancements */
-.hero {
-  padding-block: 3rem;
-}
+/* ── Global enhancements ── */
 
-.hero .tagline {
-  font-size: var(--sl-text-xl);
-  color: var(--sl-color-gray-2);
-}
-
-/* Feature cards on landing page */
 .sl-link-card {
-  border-color: var(--sl-color-accent-low);
-  transition: border-color 0.2s, transform 0.2s;
+  border-color: var(--bb-card-border);
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
   height: 100%;
 }
 
 .sl-link-card:hover {
   border-color: var(--sl-color-accent);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgb(124 58 237 / 0.1);
 }
 
-/* Code block styling */
 .expressive-code {
-  border-radius: 0.75rem;
+  border-radius: var(--bb-radius);
 }
 
-/* Sidebar branding */
 .site-title img {
   height: 2rem;
 }
 
-/* Stats section on landing page */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1.5rem;
-  margin-block: 2rem;
-  text-align: center;
+/* ── Starlight CardGrid: equal-height cards ── */
+
+[class*="CardGrid"] > * {
+  align-self: stretch;
 }
 
-.stat-item {
-  padding: 1.25rem;
-  border-radius: 0.75rem;
-  background: var(--sl-color-gray-6);
-  border: 1px solid var(--sl-color-gray-5);
+.card-grid > li,
+[class*="CardGrid"] > li {
+  display: flex;
 }
 
-.stat-number {
-  display: block;
-  font-size: var(--sl-text-2xl);
+.card-grid > li > *,
+[class*="CardGrid"] > li > * {
+  flex: 1;
+}
+
+/* ── Hero section ── */
+
+.hero {
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+
+.hero .tagline {
+  font-size: clamp(var(--sl-text-base), calc(0.0625rem + 2vw), var(--sl-text-xl));
+  color: var(--sl-color-gray-2);
+}
+
+/* ── Section dividers ── */
+
+.landing-section {
+  padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+
+.section-heading {
+  font-size: clamp(var(--sl-text-xl), calc(0.5rem + 2vw), var(--sl-text-2xl));
   font-weight: 700;
-  color: var(--sl-color-accent);
-  line-height: 1.2;
+  color: var(--sl-color-white);
+  margin-bottom: 0.5rem;
 }
 
-.stat-label {
-  display: block;
+.section-subtitle {
   font-size: var(--sl-text-sm);
   color: var(--sl-color-gray-3);
-  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 60ch;
 }
 
-/* Architecture diagram section */
-.arch-diagram {
-  padding: 2rem;
-  border-radius: 0.75rem;
-  background: var(--sl-color-gray-6);
-  border: 1px solid var(--sl-color-gray-5);
-  font-family: var(--sl-font-mono);
-  line-height: 1.6;
-  overflow-x: auto;
-  text-align: center;
-}
+/* ── Pillar cards (Three Pillars) ── */
 
-/* Pillar cards */
 .pillar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 1.25rem;
   margin-block: 1.5rem;
 }
 
 .pillar-card {
   padding: 1.5rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--sl-color-gray-5);
-  background: var(--sl-color-gray-6);
-  transition: border-color 0.2s;
+  border-radius: var(--bb-radius);
+  border: 1px solid var(--bb-card-border);
+  background: var(--bb-card-bg);
+  border-top: 3px solid var(--sl-color-accent);
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .pillar-card:hover {
   border-color: var(--sl-color-accent);
+  border-top-color: var(--sl-color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgb(124 58 237 / 0.12);
+}
+
+.pillar-card .pillar-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.75rem;
+  display: block;
 }
 
 .pillar-card h3 {
@@ -133,49 +153,323 @@
   margin: 0;
   color: var(--sl-color-gray-2);
   font-size: var(--sl-text-sm);
+  line-height: 1.6;
 }
 
-/* Service badge */
-.service-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: var(--sl-text-xs);
+/* Color variants for pillar top border */
+.pillar-card.discovery {
+  border-top-color: #7c3aed;
+}
+.pillar-card.monitoring {
+  border-top-color: #3b82f6;
+}
+.pillar-card.archiving {
+  border-top-color: #10b981;
+}
+
+/* ── Architecture diagram ── */
+
+.arch-diagram {
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: var(--bb-radius);
+  background: var(--bb-card-bg);
+  border: 1px solid var(--bb-card-border);
+  font-family: var(--sl-font-mono);
+  font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+  text-align: left;
+}
+
+/* ── Package cards (Architecture section) ── */
+
+.pkg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+
+.pkg-card {
+  padding: 1.25rem;
+  border-radius: var(--bb-radius);
+  background: var(--bb-card-bg);
+  border: 1px solid var(--bb-card-border);
+  transition: border-color 0.2s;
+}
+
+.pkg-card:hover {
+  border-color: var(--sl-color-accent);
+}
+
+.pkg-card .pkg-name {
+  font-family: var(--sl-font-mono);
+  font-size: var(--sl-text-sm);
   font-weight: 600;
-  letter-spacing: 0.025em;
+  color: var(--sl-color-accent-high);
+  margin-bottom: 0.5rem;
+}
+
+.pkg-card .pkg-desc {
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-2);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Stats bar ── */
+
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+  margin-block: 2rem;
+  padding: 1.25rem 0;
+  border-radius: var(--bb-radius);
+  background: var(--bb-card-bg);
+  border: 1px solid var(--bb-card-border);
+}
+
+.stat-item {
+  flex: 1 1 auto;
+  min-width: 100px;
+  padding: 0.75rem 1.5rem;
+  text-align: center;
+  position: relative;
+}
+
+.stat-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 15%;
+  height: 70%;
+  border-right: 1px solid var(--bb-card-border);
+}
+
+.stat-number {
+  display: block;
+  font-size: clamp(var(--sl-text-xl), 3vw, var(--sl-text-2xl));
+  font-weight: 800;
+  color: var(--sl-color-accent);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.stat-label {
+  display: block;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+/* ── Service pipeline ── */
+
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 0.75rem;
+  margin-block: 1.5rem;
+}
+
+.pipeline-step {
+  position: relative;
+  padding: 1.25rem 1rem;
+  border-radius: var(--bb-radius);
+  background: var(--bb-card-bg);
+  border: 1px solid var(--bb-card-border);
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.pipeline-step:hover {
+  border-color: var(--sl-color-accent);
+  transform: translateY(-2px);
+  color: inherit;
+}
+
+.pipeline-step .step-num {
+  display: block;
+  font-size: var(--sl-text-xs);
+  font-weight: 700;
+  color: var(--sl-color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.375rem;
+}
+
+.pipeline-step .step-name {
+  display: block;
+  font-size: var(--sl-text-sm);
+  font-weight: 600;
+  color: var(--sl-color-white);
+  margin-bottom: 0.375rem;
+}
+
+.pipeline-step .step-desc {
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+  line-height: 1.4;
+}
+
+.pipeline-step .step-mode {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.service-badge.one-shot {
-  background: #1e3a5f;
+.step-mode.one-shot {
+  background: rgb(59 130 246 / 0.15);
   color: #93c5fd;
 }
 
-.service-badge.continuous {
-  background: #1e3a29;
+.step-mode.continuous {
+  background: rgb(16 185 129 / 0.15);
   color: #86efac;
 }
 
-.service-badge.scheduled {
-  background: #3a2f1e;
+.step-mode.scheduled {
+  background: rgb(245 158 11 / 0.15);
   color: #fcd34d;
 }
 
-/* Starlight CardGrid: stretch items so cards fill the row */
-[class*="CardGrid"] > * {
-  align-self: stretch;
+:root[data-theme="light"] .step-mode.one-shot {
+  background: rgb(59 130 246 / 0.1);
+  color: #1d4ed8;
 }
 
-/* Ensure link cards within card grids are equal height */
-.card-grid > li,
-[class*="CardGrid"] > li {
-  display: flex;
+:root[data-theme="light"] .step-mode.continuous {
+  background: rgb(16 185 129 / 0.1);
+  color: #047857;
 }
 
-.card-grid > li > *,
-[class*="CardGrid"] > li > * {
-  flex: 1;
+:root[data-theme="light"] .step-mode.scheduled {
+  background: rgb(245 158 11 / 0.1);
+  color: #92400e;
 }
 
+/* Pipeline arrows between steps (desktop only) */
+.pipeline-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid var(--sl-color-accent);
+}
+
+/* ── Quick Start section ── */
+
+.quick-start-wrapper {
+  margin-block: 1rem;
+}
+
+/* ── Explore grid ── */
+
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+
+/* ── Mobile responsiveness ── */
+
+@media (max-width: 50rem) {
+  /* Stack pipeline vertically */
+  .pipeline-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pipeline-step:not(:last-child)::after {
+    display: none;
+  }
+
+  /* Stats bar wraps gracefully */
+  .stats-bar {
+    padding: 0.75rem 0;
+  }
+
+  .stat-item {
+    min-width: 80px;
+    padding: 0.5rem 1rem;
+  }
+
+  .stat-item:not(:last-child)::after {
+    display: none;
+  }
+}
+
+@media (max-width: 30rem) {
+  /* Single column on very small screens */
+  .pillar-grid,
+  .pkg-grid,
+  .explore-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pipeline-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stat-item {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    text-align: left;
+  }
+
+  .stat-number {
+    font-size: var(--sl-text-lg);
+    min-width: 3rem;
+  }
+
+  .stat-label {
+    margin-top: 0;
+  }
+
+  .arch-diagram {
+    font-size: 0.7rem;
+    padding: 0.75rem;
+  }
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-link-card,
+  .pillar-card,
+  .pipeline-step,
+  .pkg-card,
+  .section-link {
+    transition: none;
+  }
+
+  .sl-link-card:hover,
+  .pillar-card:hover,
+  .pipeline-step:hover {
+    transform: none;
+  }
+}
