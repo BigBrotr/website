@@ -1,9 +1,9 @@
 ---
 title: BigBrotr
-description: Modular Nostr data archiving and monitoring system. Discover relays, track their health, and archive events across clearnet and overlay networks.
+description: Distributed relay observatory for the Nostr network. Discovery, monitoring, archiving, analytics, and data access across clearnet and overlay networks.
 template: splash
 hero:
-  tagline: Modular infrastructure for Nostr relay discovery, health monitoring, and event archiving across clearnet and overlay networks.
+  tagline: Distributed relay observatory for Nostr. Discovery, monitoring, archiving, analytics, and data access across clearnet, Tor, I2P, and Lokinet.
   image:
     file: ../../assets/logo.webp
   actions:
@@ -19,17 +19,23 @@ hero:
 
 import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-## Three Pillars
+## Five Pillars
 
 <CardGrid>
   <Card title="Discovery" icon="magnifier">
-    Find relays across clearnet, Tor, I2P, and Lokinet. Seed from known sources, discover from NIP-65 events, validate with WebSocket handshakes.
+    Find relays across clearnet, Tor, I2P, and Lokinet. Seed from known sources, discover from events and APIs, validate with WebSocket handshakes.
   </Card>
-  <Card title="Health Monitoring" icon="heart">
-    Six NIP-66 health tests — RTT, SSL, DNS, geolocation, network reachability, HTTP — plus NIP-11 relay information documents.
+  <Card title="Monitoring" icon="heart">
+    Seven health checks per relay: NIP-11 info, RTT latency, SSL certificates, DNS records, geolocation, network/ASN, and HTTP headers. Results published as NIP-66 events.
   </Card>
-  <Card title="Event Archiving" icon="open-book">
+  <Card title="Archiving" icon="open-book">
     Cursor-based event synchronization from validated relays. Content-addressed metadata deduplication via SHA-256 hashing.
+  </Card>
+  <Card title="Analytics" icon="star">
+    11 PostgreSQL materialized views pre-computing aggregate statistics: event distribution by kind, per-relay stats, author counts, NIP adoption, software distribution, and daily time series.
+  </Card>
+  <Card title="Data Access" icon="laptop">
+    Two parallel interfaces exposing the same data: a REST API for HTTP clients and a NIP-90 Data Vending Machine for native Nostr queries over WebSocket.
   </Card>
 </CardGrid>
 
@@ -67,6 +73,16 @@ import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
     title="Synchronizer"
     description="Cursor-based event collection from validated relays."
     href="/docs/services/synchronizer/"
+  />
+  <LinkCard
+    title="Api"
+    description="REST API with automatic schema discovery, filtering, sorting, and pagination."
+    href="/docs/services/overview/"
+  />
+  <LinkCard
+    title="Dvm"
+    description="NIP-90 Data Vending Machine for native Nostr protocol access."
+    href="/docs/services/overview/"
   />
 </CardGrid>
 
