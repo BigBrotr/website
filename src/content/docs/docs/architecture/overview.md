@@ -19,7 +19,7 @@ BigBrotr's architecture follows a **diamond DAG** (Directed Acyclic Graph) depen
 
 | Layer | Packages | Responsibility |
 |-------|----------|---------------|
-| Top | `services` | Business logic. Six independent services that orchestrate discovery, monitoring, and archiving. |
+| Top | `services` | Business logic. Eight independent services that orchestrate discovery, monitoring, archiving, and data access. |
 | Middle | `core` | Connection pool, database facade, base service, logging, metrics. |
 | Middle | `nips` | Protocol-aware I/O. NIP-11 relay information, NIP-66 health monitoring. Depends on utils and models. |
 | Middle | `utils` | Network primitives. DNS resolution, Nostr key management, WebSocket/HTTP transport, SOCKS5 proxy. |
@@ -37,7 +37,7 @@ BigBrotr's architecture follows a **diamond DAG** (Directed Acyclic Graph) depen
 
 ### Independent Services
 
-All six services run as independent processes. They communicate exclusively through the shared PostgreSQL database. There are no message queues, no gRPC calls, no inter-service APIs. Each service can start, stop, scale, and fail independently without affecting the others.
+All eight services run as independent processes. They communicate exclusively through the shared PostgreSQL database. There are no message queues, no gRPC calls, no inter-service APIs. Each service can start, stop, scale, and fail independently without affecting the others.
 
 ### Immutable Domain Models
 
@@ -60,12 +60,12 @@ When reconstructing objects from the database, BigBrotr re-validates everything.
 A complete BigBrotr deployment consists of:
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Seeder    │     │   Finder    │     │  Validator   │
-│  (one-shot) │     │ (continuous)│     │ (continuous) │
-└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
+┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│  Seeder  │  │  Finder  │  │Validator │  │ Monitor  │
+│(one-shot)│  │  (cont.) │  │ (cont.)  │  │ (cont.)  │
+└────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
+     │             │             │             │
+     ▼             ▼             ▼             ▼
 ┌────────────────────────────────────────────────────┐
 │                    PgBouncer                       │
 │            (transaction pooling)                   │
@@ -73,15 +73,15 @@ A complete BigBrotr deployment consists of:
 │                   PostgreSQL                       │
 │    6 tables · 25 functions · 11 materialized views  │
 └────────────────────────────────────────────────────┘
-       ▲                   ▲                   ▲
-       │                   │                   │
-┌──────┴──────┐     ┌──────┴──────┐     ┌──────┴──────┐
-│   Monitor   │     │  Refresher  │     │Synchronizer │
-│ (continuous)│     │ (scheduled) │     │ (continuous) │
-└─────────────┘     └─────────────┘     └─────────────┘
+     ▲             ▲             ▲             ▲
+     │             │             │             │
+┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐
+│  Syncer  │  │Refresher │  │   Api    │  │   Dvm    │
+│ (cont.)  │  │(sched.)  │  │ (cont.)  │  │ (cont.)  │
+└──────────┘  └──────────┘  └──────────┘  └──────────┘
 ```
 
-Each service connects to PgBouncer, which provides connection pooling in transaction mode. Writer services (all six) use the `writer` database user; read-only consumers (APIs, DVMs, monitoring dashboards) use the `reader` user.
+Each service connects to PgBouncer, which provides connection pooling in transaction mode. Writer services use the `writer` database user; read-only services (Api, Dvm, monitoring dashboards) use the `reader` user.
 
 ## Next Steps
 

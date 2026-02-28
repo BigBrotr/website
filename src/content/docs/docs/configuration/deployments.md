@@ -3,7 +3,7 @@ title: Deployments
 description: BigBrotr and LilBrotr deployment configurations.
 ---
 
-BigBrotr ships with two deployment configurations that demonstrate different use cases. Both use the same codebase and all six services.
+BigBrotr ships with two deployment configurations that demonstrate different use cases. Both use the same codebase and all eight services.
 
 ## Deployment Structure
 
@@ -36,7 +36,7 @@ deployments/
 
 The full deployment for comprehensive Nostr network observation.
 
-- All six services with full configuration
+- All eight services with full configuration
 - All 11 materialized views
 - PostgreSQL with PgBouncer (transaction mode)
 - Prometheus metrics collection with 6 alert rules
@@ -59,14 +59,14 @@ Two connection pools:
 
 | Pool | Users | Pool Size | Purpose |
 |------|-------|-----------|---------|
-| `bigbrotr` | writer | 10 | All six services |
+| `bigbrotr` | writer | 10 | All eight services |
 | `bigbrotr_readonly` | reader | 8 | API, DVM, monitoring |
 
 ## LilBrotr
 
 A lightweight deployment with the same architecture, demonstrating BigBrotr's customizability.
 
-- Same six services and all 11 materialized views
+- Same eight services and all 11 materialized views
 - Smaller batch sizes and longer sleep intervals
 - Lower resource limits
 - Same monitoring stack
