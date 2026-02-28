@@ -1,9 +1,9 @@
 ---
 title: Data Flow
-description: How data moves through BigBrotr's six independent services via the shared database.
+description: How data moves through BigBrotr's eight independent services via the shared database.
 ---
 
-BigBrotr's six services are independent processes that share a PostgreSQL database. There is no direct communication between services. Data flows through the database: one service writes, another reads.
+BigBrotr's eight services are independent processes that share a PostgreSQL database. There is no direct communication between services. Data flows through the database: one service writes, another reads.
 
 ## Relay Lifecycle
 

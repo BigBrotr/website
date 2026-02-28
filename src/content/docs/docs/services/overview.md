@@ -1,9 +1,9 @@
 ---
 title: Services Overview
-description: BigBrotr's six independent services and how they work together.
+description: BigBrotr's eight independent services and how they work together.
 ---
 
-BigBrotr runs six independent services. Each service is a separate process with a single responsibility. Services communicate exclusively through the shared PostgreSQL database — there are no message queues, no inter-service APIs, and no orchestration layers.
+BigBrotr runs eight independent services. Each service is a separate process with a single responsibility. Services communicate exclusively through the shared PostgreSQL database — there are no message queues, no inter-service APIs, and no orchestration layers.
 
 ## Service Summary
 
@@ -15,6 +15,8 @@ BigBrotr runs six independent services. Each service is a separate process with 
 | [Monitor](/docs/services/monitor/) | Continuous | NIP-11 + NIP-66 health checks, optionally publish monitoring events |
 | [Refresher](/docs/services/refresher/) | Scheduled | Orchestrate materialized view refresh cycles |
 | [Synchronizer](/docs/services/synchronizer/) | Continuous | Cursor-based event collection from validated relays |
+| Api | Continuous | REST API with automatic schema discovery, filtering, sorting, pagination |
+| Dvm | Continuous | NIP-90 Data Vending Machine for native Nostr protocol access |
 
 ## Independence
 
@@ -28,7 +30,7 @@ Each service:
 
 ## BaseService
 
-All six services inherit from `BaseService[ConfigT]`, a generic abstract base class that provides:
+All eight services inherit from `BaseService[ConfigT]`, a generic abstract base class that provides:
 
 - **`run()`** — abstract method implementing one work cycle.
 - **`run_forever()`** — loop that calls `run()` repeatedly with sleep intervals and graceful shutdown.

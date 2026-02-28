@@ -7,7 +7,7 @@ description: Frequently asked questions about BigBrotr.
 
 ### What is BigBrotr?
 
-BigBrotr is a modular system for discovering, monitoring, and archiving the Nostr relay network. It runs six independent services that share a PostgreSQL database to provide complete network visibility.
+BigBrotr is a modular system for discovering, monitoring, and archiving the Nostr relay network. It runs eight independent services that share a PostgreSQL database to provide complete network visibility.
 
 ### Is BigBrotr a relay?
 
@@ -23,7 +23,7 @@ When configured with Nostr keys, the Monitor publishes kind 10166 (replaceable r
 
 ## Architecture
 
-### Why six independent services instead of a monolith?
+### Why eight independent services instead of a monolith?
 
 Each service has a single responsibility and can run, scale, and fail independently. You can run only the services you need — for example, skip the Synchronizer if you only need relay health data.
 

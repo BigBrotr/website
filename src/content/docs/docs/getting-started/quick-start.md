@@ -3,7 +3,7 @@ title: Quick Start
 description: Get BigBrotr running in minutes with Docker Compose.
 ---
 
-This guide gets you from zero to a running BigBrotr instance using Docker Compose. You will have all six services, PostgreSQL with PgBouncer, and Prometheus monitoring operational within minutes.
+This guide gets you from zero to a running BigBrotr instance using Docker Compose. You will have all eight services, PostgreSQL with PgBouncer, and Prometheus monitoring operational within minutes.
 
 ## Prerequisites
 
@@ -33,7 +33,7 @@ The key environment variables:
 | `POSTGRES_USER` | `admin` | PostgreSQL superuser |
 | `POSTGRES_PASSWORD` | — | Set a strong password |
 | `POSTGRES_DB` | `bigbrotr` | Database name |
-| `WRITER_USER` | `writer` | Writer services (all six services) |
+| `WRITER_USER` | `writer` | Writer services (all eight services) |
 | `READER_USER` | `reader` | Read-only services (API, DVM, monitoring) |
 
 ## 3. Start the Stack
