@@ -1,6 +1,6 @@
 # BigBrotr Website
 
-Official website and documentation for [BigBrotr](https://github.com/BigBrotr/bigbrotr) — a modular Nostr data archiving and monitoring system.
+Official website and documentation for [BigBrotr](https://github.com/BigBrotr/bigbrotr)
 
 **Live at [bigbrotr.com](https://bigbrotr.com)**
 
