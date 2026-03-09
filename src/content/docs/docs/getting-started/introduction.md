@@ -43,10 +43,12 @@ Two parallel interfaces expose the same data: the Api service provides a REST AP
 
 | Component | Technology |
 |-----------|-----------|
-| Language | Python 3.11+ with full async/await |
+| Language | Python 3.11+ (3.11–3.14) with full async/await |
 | Database | PostgreSQL 16+ with asyncpg |
 | Connection Pooling | PgBouncer (transaction mode) |
-| Configuration | Pydantic models from YAML files |
+| Nostr | nostr-sdk v0.37+ (Rust FFI via UniFFI) |
+| Web Framework | FastAPI 0.115+ with uvicorn |
+| Configuration | Pydantic v2.5+ models from YAML files |
 | Metrics | Prometheus exposition format |
 | Containerization | Docker with parametric Dockerfile |
 | Overlay Networks | Tor, I2P, Lokinet via SOCKS5 proxy |

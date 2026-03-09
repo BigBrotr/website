@@ -73,6 +73,8 @@ export default defineConfig({
             { label: "Monitor", slug: "docs/services/monitor" },
             { label: "Refresher", slug: "docs/services/refresher" },
             { label: "Synchronizer", slug: "docs/services/synchronizer" },
+            { label: "Api", slug: "docs/services/api" },
+            { label: "Dvm", slug: "docs/services/dvm" },
           ],
         },
         {

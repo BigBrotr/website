@@ -36,10 +36,10 @@ deployments/
 
 The full deployment for comprehensive Nostr network observation.
 
-- All eight services with full configuration
+- All eight services with full configuration (13 Docker containers total)
 - All 11 materialized views
 - PostgreSQL with PgBouncer (transaction mode)
-- Prometheus metrics collection with 6 alert rules
+- Prometheus metrics collection with 7 alert rules
 - Grafana dashboards with service overview
 - Docker Compose with resource limits and health checks
 - Two Docker networks: `data` (services + database) and `monitoring`
@@ -64,14 +64,15 @@ Two connection pools:
 
 ## LilBrotr
 
-A lightweight deployment with the same architecture, demonstrating BigBrotr's customizability.
+A lightweight deployment (~60% disk savings) with the same architecture, demonstrating BigBrotr's customizability.
 
 - Same eight services and all 11 materialized views
 - Smaller batch sizes and longer sleep intervals
 - Lower resource limits
 - Same monitoring stack
+- Event table stores only id/pubkey/created_at/kind/tagvalues (tags/content/sig are nullable and always NULL)
 
-The key difference is configuration tuning, not code changes. LilBrotr processes less data per cycle but uses the same codebase.
+The key difference is configuration tuning and event storage, not code changes. LilBrotr processes less data per cycle and stores only event metadata, using the same codebase.
 
 ## Parametric Dockerfile
 
@@ -103,6 +104,16 @@ Both deployments use `.env` files for secrets and runtime configuration:
 | `READER_USER` | Read-only user |
 | `READER_PASSWORD` | Reader password |
 | `NOSTR_PRIVATE_KEY` | Monitor event publishing key (optional) |
+
+## Security
+
+Both deployments follow security best practices:
+
+- All ports bound to `127.0.0.1` (no external exposure by default)
+- Non-root container execution (UID 1000)
+- `tini` as PID 1 for proper signal handling
+- SCRAM-SHA-256 authentication for PostgreSQL
+- Health checks via `pg_isready` and `/metrics` endpoints
 
 ## Creating Your Own Deployment
 

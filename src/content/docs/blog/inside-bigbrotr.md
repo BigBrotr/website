@@ -7,7 +7,7 @@ tags:
   - architecture
   - deep-dive
   - nostr
-excerpt: A comprehensive technical deep dive into BigBrotr's architecture — eight services, 25 stored procedures, 11 materialized views, and the design decisions behind a distributed Nostr relay observatory.
+excerpt: A technical deep dive into BigBrotr's architecture — eight services, ~18,000 lines of Python, 25 stored procedures, 11 materialized views, and the design decisions behind a Nostr relay observatory.
 ---
 
 If you've spent any time on Nostr, you've probably wondered: how many relays are actually out there? Which ones are healthy? What kind of events are flowing through them? There's no central registry, no dashboard, no authority you can ask. Relays come and go, some are solid, some are broken, some lie about their capabilities.
@@ -16,7 +16,7 @@ BigBrotr exists to answer those questions. It's a distributed system that discov
 
 This post walks through the architecture — not as a sales pitch, but as a technical deep dive into how the system is put together, what problems we ran into, and why certain decisions were made. If you like distributed systems, async Python, or PostgreSQL internals, there's probably something here for you.
 
-The project started in August 2025, funded by an [OpenSats](https://opensats.org/) grant. It's about ~34,000 lines of Python, ~2,400 unit tests, 8 independent services, and 13 Docker containers. One person, start to finish.
+The project started in August 2025, funded by an [OpenSats](https://opensats.org/) grant. It's about ~18,000 lines of Python across 88 modules, ~2,955 tests (~2,739 unit + ~216 integration), 8 independent services, and 13 Docker containers. One person, start to finish.
 
 ---
 
@@ -152,7 +152,7 @@ A few things worth noting:
 - **`deep_freeze()`** wraps dicts with `MappingProxyType` and lists with `tuple`. Trying `metadata.data["key"] = "value"` raises `TypeError`. The data is genuinely immutable, not just "please don't mutate this."
 - **`_db_params` is cached**: conversion to a NamedTuple (what asyncpg wants) happens once at construction time, not on every DB call.
 
-**Content-addressed deduplication** is the key insight. Two relays reporting the same NIP-11 data produce the same SHA-256 hash → one row in the `metadata` table. The composite PK `(id, metadata_type)` allows the same hash for different types (which is valid — different data structures can hash to the same value, and we need to distinguish them).
+**Content-addressed deduplication** is the key insight. Two relays reporting the same NIP-11 data produce the same SHA-256 hash → one row in the `metadata` table. The composite PK `(id, type)` allows the same hash for different types (which is valid — different data structures can hash to the same value, and we need to distinguish them).
 
 **Relay URL validation** (`relay.py`) does full RFC 3986 parsing with the `rfc3986` library, auto-detects network type (clearnet/tor/i2p/loki) from TLD and IP, rejects local addresses (26 IANA IPv4/IPv6 ranges), normalizes the scheme (`wss://` for clearnet, `ws://` for overlay networks that handle encryption themselves), and strips default ports.
 
@@ -160,7 +160,7 @@ A few things worth noting:
 
 ### `core/` — Infrastructure and Lifecycle
 
-#### Connection Pool (`pool.py`, 727 lines)
+#### Connection Pool (`pool.py`, 738 lines)
 
 The asyncpg pool with configurable retry/backoff is one of the more carefully designed pieces:
 
@@ -172,7 +172,7 @@ The asyncpg pool with configurable retry/backoff is one of the more carefully de
 - **Fresh connection per retry attempt**: each attempt acquires a new connection from the pool. If the previous one was broken mid-query, the new socket works.
 - **Dual JSON codec**: handles both pre-serialized JSON strings (from `Metadata.canonical_json`) and raw Python dicts. Without this, double serialization would corrupt the data silently.
 
-#### DB Facade (`brotr.py`, 966 lines)
+#### DB Facade (`brotr.py`, 964 lines)
 
 High-level facade wrapping all PostgreSQL stored procedures:
 
@@ -180,7 +180,7 @@ High-level facade wrapping all PostgreSQL stored procedures:
 - **`_call_procedure()`**: central private method that executes all stored procedures with the appropriate timeout, automatic retry, and parameter conversion.
 - **Generic methods**: `fetch()`, `fetchrow()`, `fetchval()`, `execute()`, `transaction()` — services use ONLY these, never the pool directly.
 
-#### Service Lifecycle (`base_service.py`, 392 lines)
+#### Service Lifecycle (`base_service.py`, 418 lines)
 
 This combines Template Method + State Machine + Async Context Manager:
 
@@ -195,7 +195,7 @@ This combines Template Method + State Machine + Async Context Manager:
 
 Key=value logging with optional JSON output. `format_kv_pairs()` for consistent formatting. Integrated with Prometheus: every cycle log includes metrics.
 
-#### Prometheus Metrics (`metrics.py`, 208 lines)
+#### Prometheus Metrics (`metrics.py`, 209 lines)
 
 Four metric types: `SERVICE_INFO` (identity), `SERVICE_GAUGE` (per-cycle snapshot), `SERVICE_COUNTER` (cumulative), `CYCLE_DURATION_SECONDS` (histogram). HTTP server on port 8000 for scraping.
 
@@ -221,7 +221,7 @@ Each data model declares a `_FIELD_SPEC` and the `parse_fields()` function appli
 #### NIP-11: Relay Info Fetch
 
 - HTTP(S) fetch with aiohttp, SOCKS5 proxy support for overlay networks
-- 3-level SSL strategy: verify → fallback to `CERT_NONE` if `allow_insecure` → error
+- SSL strategy: verify first → fallback to `CERT_NONE` if `allow_insecure` is configured → error otherwise
 - Response limited to 64 KB, Content-Type validated (`application/nostr+json` or `application/json`)
 - Data parsed into `Nip11InfoData` (30+ fields: name, description, pubkey, supported NIPs, limitations, fees, retention policies)
 - Python reserved keyword handling: NIP-11 field `"self"` aliased to `self_pubkey` with `populate_by_name=True`
@@ -310,11 +310,11 @@ Relays can lie about auth/payment requirements. The NIP-66 probe result is autho
 
 Let me go through each service briefly, highlighting what makes each one interesting.
 
-#### Seeder (143 lines) — Bootstrap
+#### Seeder (111 lines) — Bootstrap
 
 One-shot parsing of a seed file (one URL per line). Validates each URL → `Relay` object. Inserts as candidates or directly as relays. No retry, no cycle. `restart: no` in Docker Compose. It runs once and exits.
 
-#### Finder (497 lines) — Multi-Source Discovery
+#### Finder (398 lines) — Multi-Source Discovery
 
 Two discovery sources:
 
@@ -324,7 +324,7 @@ Two discovery sources:
 
 Concurrency via `asyncio.TaskGroup` + semaphore to limit parallel event scans per relay.
 
-#### Validator (405 lines) — WebSocket Handshake Test
+#### Validator (237 lines) — WebSocket Handshake Test
 
 Cycle: cleanup stale → cleanup exhausted → validate.
 
@@ -332,16 +332,18 @@ Cycle: cleanup stale → cleanup exhausted → validate.
 - **Per-network semaphores**: Tor gets fewer simultaneous connections than clearnet
 - **Atomic promotion**: `promote_candidates()` = `insert_relay()` + `DELETE service_state CANDIDATE` in a single operation
 - **Per-cycle budget**: configurable `max_candidates`; the validator processes at most N candidates per cycle
+- **`allow_insecure`**: configurable SSL fallback for relays with invalid certificates
 
-#### Monitor (918 lines) — The Most Complex Service
+#### Monitor (669 lines) — The Most Complex Service
 
-Triple mixin composition:
+Quadruple mixin composition:
 
 ```python
 class Monitor(
-    ChunkProgressMixin,       # Chunk progress tracking
+    ConcurrentStreamMixin,    # TaskGroup + Queue streaming
     NetworkSemaphoresMixin,   # Per-network semaphores
     GeoReaderMixin,           # GeoIP database lifecycle
+    ClientsMixin,             # Managed Nostr client pool
     BaseService[MonitorConfig],
 ):
 ```
@@ -365,19 +367,20 @@ The `run()` cycle:
 
 **Publication interval state management**: the monitor uses the `service_state` table with type `PUBLICATION` to track when it last published each event type. If the interval hasn't elapsed, it skips publishing. This prevents publishing the same event thousands of times per hour.
 
-#### Synchronizer (396 lines) — Event Archiving with Cursors
+#### Synchronizer (449 lines) — Event Archiving with Binary-Split Windowing
 
 - **Relay shuffle**: `random.shuffle()` prevents thundering herd when multiple instances hit the same relays in the same order
-- **Cursor-based pagination**: per-relay cursor `{last_synced_at: timestamp}` in the DB. On restart, resumes where it left off.
+- **Cursor-based resumption**: per-relay cursor `{last_synced_at: timestamp}` in the DB. On restart, resumes where it left off.
+- **Binary-split windowing**: data-driven time windows with completeness verification. If a relay's response appears incomplete, the window is split in half and retried — ensuring no events are missed even from high-volume relays.
 - **Per-relay overrides**: custom timeouts for high-traffic relays
 - **Event validation**: signature verification (`evt.verify()`), temporal bounds, null bytes. Invalid events counted but not inserted.
-- **Cursor batching**: periodic cursor flush (e.g., every 50 relays) for crash resilience — if the service crashes, it loses at most one batch worth of cursor progress.
+- **`allow_insecure`**: configurable SSL fallback for relays with invalid certificates, same as Validator and Dvm.
 
-#### Refresher (88 lines) — The Simplest
+#### Refresher (92 lines) — The Simplest
 
 Sequential, no parallelism. For each view in the configured list: `REFRESH MATERIALIZED VIEW CONCURRENTLY view_name`. One view failing doesn't block the others.
 
-#### Api (369 lines) — Dynamic REST API
+#### Api (389 lines) — Dynamic REST API
 
 - **Automatic schema discovery**: on startup, queries `information_schema` and `pg_catalog` to discover tables, columns, PKs, unique indexes. Generates endpoints automatically for each enabled table.
 - **Parameterized query builder**: filters (`col=value`, `col=>=:100`, `col=ILIKE:%pattern%`), sorting, pagination. Operator whitelist. Type transforms for bytea (hex), timestamp (text), numeric (float).
@@ -385,7 +388,7 @@ Sequential, no parallelism. For each view in the configured list: `REFRESH MATER
 - **Offset limit**: 100,000 max to prevent deep pagination abuse.
 - **Middleware**: request/response logging, timing, status code tracking, configurable CORS.
 
-#### Dvm (494 lines) — Nostr Data Vending Machine (NIP-90)
+#### Dvm (396 lines) — Nostr Data Vending Machine (NIP-90)
 
 - **NIP-90 protocol**: listens for Kind 5050 requests via WebSocket, responds with results (Kind 6050) or errors (Kind 7000) on the Nostr network
 - **Same Catalog as API**: uses the same query builder for consistency
@@ -395,14 +398,16 @@ Sequential, no parallelism. For each view in the configured list: `REFRESH MATER
 
 ### `services/common/` — Shared Code
 
-**Query Functions** (712 lines, 15 functions): all domain SQL queries centralized here. Parameterized `$1`/`$2` placeholders (never f-strings for values). Timeouts from config. Batching via `_batched_insert()` that splits records into chunks of `max_size`. Composite cursors for deterministic pagination.
+**Query Functions** (1,012 lines total across 6 modules): domain SQL queries are distributed across service-specific `queries.py` modules (monitor 248, finder 260, validator 241, synchronizer 98, seeder 29) plus a shared `common/queries.py` (136 lines). Parameterized `$1`/`$2` placeholders (never f-strings for values). Timeouts from config. Batching via `_batched_insert()` that splits records into chunks of `max_size`. Composite cursors for deterministic pagination.
 
-**Mixins** (261 lines, 3 mixins):
-- **ChunkProgress**: tracks time with two clocks — `time.time()` for Unix timestamps (DB comparison) and `time.monotonic()` for duration (never jumps backwards even if the system clock is adjusted).
-- **NetworkSemaphores**: maps `NetworkType → asyncio.Semaphore`. Different networks get different concurrency. `LOCAL`/`UNKNOWN` return `None` (no concurrency limiting).
-- **GeoReaders**: GeoIP2 database lifecycle (opening in thread pool via `asyncio.to_thread()`, synchronous close). Idempotent — opening or closing twice is safe.
+**Mixins** (423 lines, 5 cooperative mixins):
+- **ConcurrentStreamMixin**: `_iter_concurrent()` with `asyncio.TaskGroup` + `asyncio.Queue` streaming — results are yielded as workers complete, not buffered until all finish.
+- **NetworkSemaphoresMixin**: maps `NetworkType → asyncio.Semaphore`. Different networks get different concurrency. `LOCAL`/`UNKNOWN` return `None` (no concurrency limiting).
+- **GeoReaderMixin**: GeoIP2 database lifecycle (opening in thread pool via `asyncio.to_thread()`, synchronous close). Idempotent — opening or closing twice is safe.
+- **ClientsMixin**: managed Nostr client pool with per-relay proxy URL resolution, auto-configured from `MonitorConfig`.
+- **CatalogAccessMixin**: schema discovery + table access policy, used by Api and Dvm for safe parameterized queries.
 
-**Catalog** (551 lines): the safe query builder shared between Api and Dvm. Schema discovery via `information_schema` + `pg_catalog`. Whitelist-by-construction: only tables/columns discovered from the DB can be used. Type transforms. Operator validation. `CatalogError` for client-safe errors.
+**Catalog** (532 lines): the safe query builder shared between Api and Dvm. Schema discovery via `information_schema` + `pg_catalog`. Whitelist-by-construction: only tables/columns discovered from the DB can be used. Type transforms. Operator validation. `CatalogError` for client-safe errors.
 
 ---
 
@@ -432,7 +437,7 @@ nip66 = await Nip66.create(relay, selection=Nip66Selection(dns=False))
 from bigbrotr import Monitor
 ```
 
-The package's `__init__.py` exposes **75 symbols** with lazy loading: imports happen only on first access, reducing startup time for consumers who use only a subset. The diamond DAG guarantees you can import any subset without unnecessary dependencies and without circular imports.
+The package's `__init__.py` exposes **32 symbols** with lazy loading: imports happen only on first access, reducing startup time for consumers who use only a subset. The diamond DAG guarantees you can import any subset without unnecessary dependencies and without circular imports.
 
 ### Adding a New Service — Minimal Boilerplate
 
@@ -478,7 +483,7 @@ The problem: today BigBrotr supports 7 metadata types (NIP-11 info + 6 NIP-66 te
 
 The solution is a **3-level forward-compatible schema**.
 
-**Level 1 — Database**: the `metadata` table accepts any string as `metadata_type`. Adding `NIP66_DNSSEC` requires no ALTER TABLE. Content is free-form JSONB. The SHA-256 hash is computed in Python, not in the DB. Existing code ignores unknown types.
+**Level 1 — Database**: the `metadata` table accepts any string as `type`. Adding `NIP66_DNSSEC` requires no ALTER TABLE. Content is free-form JSONB. The SHA-256 hash is computed in Python, not in the DB. Existing code ignores unknown types.
 
 **Level 2 — Python Models**: `MetadataType` is a `StrEnum`. Adding a member is one line:
 
@@ -588,9 +593,9 @@ CREATE TABLE event_relay (
 -- Metadata: content-addressed (SHA-256 hash)
 CREATE TABLE metadata (
     id BYTEA NOT NULL,
-    metadata_type TEXT NOT NULL,
+    type TEXT NOT NULL,
     data JSONB NOT NULL,
-    PRIMARY KEY (id, metadata_type)
+    PRIMARY KEY (id, type)
 );
 
 -- Time-series junction: health check history per relay
@@ -600,7 +605,7 @@ CREATE TABLE relay_metadata (
     metadata_type TEXT,
     generated_at BIGINT NOT NULL,
     PRIMARY KEY (relay_url, generated_at, metadata_type),
-    FOREIGN KEY (metadata_id, metadata_type) REFERENCES metadata(id, metadata_type)
+    FOREIGN KEY (metadata_id, metadata_type) REFERENCES metadata(id, type)
 );
 
 -- Generic key-value store for service state
@@ -618,7 +623,7 @@ CREATE TABLE service_state (
 
 **`tagvalues` as GENERATED ALWAYS STORED**: computed column, calculated once on INSERT. Feeds a GIN index for containment queries (`WHERE tagvalues @> ARRAY['<id>']`). Avoids recalculation on every query.
 
-**Composite FK in `relay_metadata`**: `(metadata_id, metadata_type)` references `metadata(id, metadata_type)`. Maintains referential integrity on the pair, not just the hash.
+**Composite FK in `relay_metadata`**: `(metadata_id, metadata_type)` references `metadata(id, type)`. Maintains referential integrity on the pair, not just the hash.
 
 **Composite PK in `relay_metadata`**: `(relay_url, generated_at, metadata_type)`. Each relay can have many instances of each metadata type over time — it's a time-series of health checks.
 
@@ -654,7 +659,7 @@ Pre-compute aggregate statistics so the API doesn't need expensive JOINs at runt
 
 **Refresh strategy**: `REFRESH MATERIALIZED VIEW CONCURRENTLY` requires a unique index on each view. The Refresher updates them in dependency order (3 levels).
 
-### Indexes (26)
+### Indexes (31)
 
 Strategically placed to support the query patterns of each service:
 
@@ -662,7 +667,7 @@ Strategically placed to support the query patterns of each service:
 - **3 on `event_relay`**: by relay, by timestamp, compound for index-only scan
 - **3 on `relay_metadata`**: by timestamp, compound FK, latest-per-type
 - **3 on `service_state`**: by service, by type, expression index on JSON for Validator
-- **10 on materialized views**: unique indexes required for CONCURRENTLY
+- **15 on materialized views**: unique indexes required for CONCURRENTLY
 
 ---
 
@@ -677,22 +682,23 @@ networks:
   bigbrotr-monitoring-network:  # Prometheus + Grafana + AlertManager
 ```
 
-| Container | CPU | RAM | Role |
-|-----------|-----|-----|------|
-| postgres | 2.0 | 2G | Primary database |
-| pgbouncer | 0.5 | 256M | Connection pooling |
-| tor | 0.5 | 256M | SOCKS5 proxy for .onion |
-| seeder | 0.5 | 256M | Bootstrap (one-shot, `restart: no`) |
-| finder | 1.0 | 512M | Discovery |
-| validator | 1.0 | 512M | WebSocket validation |
-| monitor | 1.0 | 512M | Health checks |
-| synchronizer | 1.0 | 512M | Event archiving |
-| refresher | 0.25 | 256M | Materialized view refresh |
-| api | 0.5 | 256M | REST API |
-| dvm | 0.5 | 256M | Nostr DVM |
-| prometheus | 0.5 | 512M | Metrics (30 day retention) |
-| alertmanager | 0.25 | 128M | Alert routing |
-| grafana | 0.5 | 512M | Visualization |
+| Container | Role |
+|-----------|------|
+| postgres | Primary database (PostgreSQL 16) |
+| pgbouncer | Connection pooling (transaction mode) |
+| tor | SOCKS5 proxy for .onion relays |
+| seeder | Bootstrap (one-shot, `restart: no`) |
+| finder | Relay discovery |
+| validator | WebSocket validation |
+| monitor | NIP-11 + NIP-66 health checks |
+| synchronizer | Event archiving |
+| refresher | Materialized view refresh |
+| api | REST API (FastAPI) |
+| dvm | Nostr DVM (NIP-90) |
+| postgres-exporter | PostgreSQL metrics for Prometheus |
+| prometheus | Metrics collection (30 day retention) |
+| alertmanager | Alert routing |
+| grafana | Visualization dashboards |
 
 Plus I2P and Lokinet as optional containers (commented out but documented for enablement).
 
@@ -714,10 +720,10 @@ Connection pooler in front of PostgreSQL. Connection multiplexing to reduce DB l
 
 ### Monitoring Stack
 
-- **Prometheus** (v2.51.0): scraping every 30s from all services + postgres-exporter. 30-day TSDB retention.
+- **Prometheus** (v2.51.0): scraping every 30s from all services + postgres-exporter. 30-day TSDB retention. 7 alert rules covering service health, failure rates, cycle performance, database connections, cache hit ratios, and view refresh failures.
 - **AlertManager** (v0.27.0): grouping by `alertname`/`service`. Critical alerts repeated every 1h, normal every 4h.
 - **Grafana** (10.4.1): automatic datasource + dashboard provisioning. Zero manual setup.
-- **postgres-exporter** (v0.16.0): PostgreSQL metrics (pg_stat_statements, etc.).
+- **postgres-exporter** (v0.16.0): PostgreSQL metrics (connections, cache hit ratio, table stats).
 
 ---
 
@@ -762,7 +768,7 @@ Key details:
 - **Trivy scan**: gates on CRITICAL/HIGH, reports MEDIUM. SARIF uploaded to GitHub Security tab.
 - **Concurrency**: one run per branch; new pushes cancel previous runs.
 
-### Pre-commit Hooks (13 hooks)
+### Pre-commit Hooks (23 hooks)
 
 - **File hygiene**: trailing-whitespace, end-of-file-fixer, check-yaml/json/toml, check-large-files (max 1MB), detect-private-key, mixed-line-ending (LF)
 - **Python**: ruff (lint + format), mypy (strict on src/)
@@ -821,17 +827,17 @@ Every architectural decision is a trade-off. Here are the ones that mattered mos
 
 | Dimension | Value |
 |-----------|-------|
-| Source code | ~34,000 lines Python, 78 files |
-| Tests | ~2,400 unit + ~90 integration, 88 files |
+| Source code | ~18,000 lines Python, 88 modules |
+| Tests | ~2,739 unit + ~216 integration (~2,955 total) |
 | SQL | 1,759 lines, 10 init files |
 | Services | 8 independent |
 | Stored procedures | 25 |
 | Materialized views | 11 |
-| Indexes | 26 |
+| Indexes | 31 (16 table + 15 matview) |
 | Docker containers | 13 (+ 2 optional) |
 | Core dependencies | 18 |
 | Dev dependencies | 18 |
-| Pre-commit hooks | 13 |
+| Pre-commit hooks | 23 |
 | Coverage | 80% branch coverage (enforced) |
 
 ---

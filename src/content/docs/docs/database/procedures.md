@@ -26,7 +26,7 @@ These handle the core data operations — inserting relays, events, metadata, an
 | `metadata_insert` | Insert metadata objects (bulk `BYTEA[]`, `TEXT[]`, `JSONB[]` arrays) |
 | `event_relay_insert` | Insert event-relay associations |
 | `relay_metadata_insert` | Insert relay-metadata associations |
-| `service_state_upsert` | Insert or update service state checkpoints |
+| `service_state_upsert` | Insert or update service state checkpoints (returns affected row count) |
 | `service_state_get` | Query service state (returns `TABLE(state_key, state_value, updated_at)`) |
 | `service_state_delete` | Remove service state entries |
 

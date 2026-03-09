@@ -45,7 +45,7 @@ Every model is a frozen dataclass with `__slots__`. Instances are immutable afte
 
 ### Content-Addressed Deduplication
 
-Metadata objects are hashed with SHA-256. Same data always produces the same hash. The composite primary key `(id, metadata_type)` means deduplication operates within each metadata type. The type is NOT included in the hash — deduplication is per-type. This eliminates duplicates at the data layer without application-level coordination.
+Metadata objects are hashed with SHA-256. Same data always produces the same hash. The composite primary key `(id, type)` means deduplication operates within each metadata type. The type is NOT included in the hash — deduplication is per-type. This eliminates duplicates at the data layer without application-level coordination.
 
 ### Database as Integration Point
 

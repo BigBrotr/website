@@ -72,18 +72,24 @@ seed:
 # config/services/finder.yaml
 interval: 300
 
-concurrency:
-  max_parallel_api: 5
-  max_parallel_events: 3
-
 events:
   enabled: true
-  batch_size: 500
+  limit: 500
 
 api:
   sources:
     - url: https://api.nostr.watch/v1/online
       jmespath: "[].url"
+      timeout: 30
+      connect_timeout: 10
+      allow_insecure: false
+  cooldown: 3600
+  request_delay: 1.0
+
+networks:
+  clearnet:
+    timeout: 10
+    max_tasks: 25
 ```
 
 ### Validator
@@ -94,6 +100,7 @@ interval: 120
 
 processing:
   chunk_size: 100
+  allow_insecure: false  # SSL fallback for invalid certificates
 
 networks:
   clearnet:
@@ -166,20 +173,98 @@ refresh:
 # config/services/synchronizer.yaml
 interval: 300
 
-filter:
-  limit: 500
-
-time_range:
-  hours: 24
+limit: 500             # max events per relay window
+flush_interval: 50     # flush cursors every N relays
+allow_insecure: false  # SSL fallback for invalid certificates
 
 networks:
   clearnet:
-    timeout: 30
+    timeout: 10
     max_tasks: 25
+  tor:
+    enabled: true
+    timeout: 30
+    max_tasks: 5
+    proxy_url: socks5://tor:9050
 
 timeouts:
-  relay_clearnet: 30
-  relay_tor: 90
+  clearnet: 1800       # per-relay sync timeout (clearnet)
+  tor: 3600            # per-relay sync timeout (Tor)
+  max_duration: null   # overall phase time cap (null = unlimited)
+```
+
+### Api
+
+```yaml
+# config/services/api.yaml
+title: "BigBrotr API"
+host: 0.0.0.0
+port: 8080
+route_prefix: /v1
+
+cors_origins:
+  - "https://bigbrotr.com"
+
+request_timeout: 30.0
+max_page_size: 1000
+default_page_size: 100
+
+tables:
+  relay:
+    enabled: true
+  event:
+    enabled: true
+  metadata:
+    enabled: true
+  relay_stats:
+    enabled: true
+  event_stats:
+    enabled: true
+  kind_counts:
+    enabled: true
+  network_stats:
+    enabled: true
+  relay_software_counts:
+    enabled: true
+  supported_nip_counts:
+    enabled: true
+```
+
+### Dvm
+
+```yaml
+# config/services/dvm.yaml
+interval: 60
+
+name: "BigBrotr DVM"
+about: "Read-only access to the BigBrotr relay observatory"
+d_tag: "bigbrotr-dvm"
+
+relays:
+  - wss://relay.damus.io
+  - wss://nos.lol
+
+kind: 5050
+announce: true
+allow_insecure: false
+fetch_timeout: 30.0
+
+default_page_size: 100
+max_page_size: 1000
+
+tables:
+  relay:
+    enabled: true
+    price: 0
+  relay_stats:
+    enabled: true
+    price: 0
+  event_stats:
+    enabled: true
+    price: 100
+  kind_counts:
+    enabled: true
+    price: 50
 ```
 
 ## Validation

@@ -11,69 +11,75 @@ The `Nip66` class in `bigbrotr.nips.nip66` runs independent health tests, each p
 
 ### RTT (Round-Trip Time)
 
-Opens a WebSocket connection to the relay and measures the round-trip time in milliseconds. This indicates the relay's responsiveness.
+Measures WebSocket latency in three phases: **open** (connection establishment), **read** (first message receipt), and **write** (message send acknowledgment). Each phase is timed independently. If any phase fails, subsequent phases are skipped (cascading failure).
 
 | MetadataType | `NIP66_RTT` |
 |---|---|
-| Measures | WebSocket handshake duration (ms) |
+| Measures | Open/read/write latency in milliseconds (3-phase) |
 | Network support | All (clearnet, Tor, I2P, Lokinet) |
 
 ### SSL (Certificate Validation)
 
-Inspects the relay's SSL/TLS certificate for validity, expiration, and issuer information.
+Inspects the relay's SSL/TLS certificate using a two-connection methodology. Captures certificate validity, expiration date, issuer chain, Subject Alternative Names (SANs), cipher suite, protocol version, and SHA-256 fingerprint.
 
 | MetadataType | `NIP66_SSL` |
 |---|---|
-| Measures | Certificate validity, expiration date, issuer chain |
+| Measures | Certificate validity, expiration, issuer, SANs, cipher, fingerprint |
 | Network support | Clearnet only (overlay networks use different transport) |
 
 ### DNS (Resolution)
 
-Resolves the relay's hostname and measures DNS resolution time.
+Resolves the relay's hostname and collects DNS record types: A, AAAA, CNAME, NS, and PTR records with TTL values.
 
 | MetadataType | `NIP66_DNS` |
 |---|---|
-| Measures | Resolution time, IP addresses, DNSSEC status |
+| Measures | A/AAAA/CNAME/NS/PTR records, TTL |
 | Network support | Clearnet only |
 
 ### Geo (Geographic Location)
 
-Looks up the relay's IP address in MaxMind GeoIP databases to determine geographic location.
+Looks up the relay's IP address in the MaxMind GeoLite2-City database to determine geographic location, including geohash (precision 9) and timezone.
 
 | MetadataType | `NIP66_GEO` |
 |---|---|
-| Measures | Country, city, ASN, latitude/longitude |
+| Measures | Country, city, coordinates, timezone, geohash |
 | Dependencies | MaxMind GeoLite2-City.mmdb |
+| Network support | Clearnet only |
 
 ### Net (Network Information)
 
-Identifies the relay's Autonomous System (AS) number, ISP, and network prefix.
+Identifies the relay's IPv4/IPv6 addresses, Autonomous System (AS) number, organization, and network ranges.
 
 | MetadataType | `NIP66_NET` |
 |---|---|
-| Measures | AS number, ISP name, network prefix |
+| Measures | IP addresses, ASN, organization, network ranges |
 | Dependencies | MaxMind GeoLite2-ASN.mmdb |
+| Network support | Clearnet only |
 
-### HTTP (Status Check)
+### HTTP (Headers)
 
-Sends an HTTP request to the relay's URL and records the response status, headers, and redirect chain.
+Captures the `Server` and `X-Powered-By` HTTP headers from the WebSocket upgrade response using trace hooks.
 
 | MetadataType | `NIP66_HTTP` |
 |---|---|
-| Measures | HTTP status code, headers, redirects |
+| Measures | Server header, X-Powered-By header |
 | Network support | All |
 
 ## Event Publishing
 
 When the Monitor is configured with Nostr keys, it publishes monitoring results as Nostr events:
 
-### Kind 10166 — Replaceable Relay Monitor
+### Kind 10166 — Monitor Announcement
 
-A replaceable event containing the overall monitoring status for a relay. Each new publication replaces the previous one.
+A replaceable event announcing the monitor's capabilities, supported networks, and configuration. Each new publication replaces the previous one.
 
-### Kind 30166 — Parameterized Replaceable Relay Monitor
+### Kind 22456 — Ephemeral Relay Test
 
-A parameterized replaceable event where the `d` tag identifies the relay. This enables clients to subscribe to monitoring data for specific relays.
+An ephemeral event containing individual health test results. Not stored long-term by relays.
+
+### Kind 30166 — Relay Discovery
+
+A parameterized replaceable (addressable) event where the `d` tag identifies the relay. Contains aggregated health data per relay, enabling clients to subscribe to monitoring data for specific relays.
 
 ### Event Structure
 

@@ -3,7 +3,7 @@ title: Testing
 description: How to write, run, and organize tests in BigBrotr.
 ---
 
-BigBrotr maintains approximately 2,400 unit tests and 90 integration tests (using testcontainers with PostgreSQL) with a minimum 80% branch coverage requirement.
+BigBrotr maintains approximately 2,739 unit tests and 216 integration tests (~2,955 total, using testcontainers with PostgreSQL) with a minimum 80% branch coverage requirement.
 
 ## Running Tests
 

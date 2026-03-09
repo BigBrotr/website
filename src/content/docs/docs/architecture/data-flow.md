@@ -7,37 +7,33 @@ BigBrotr's eight services are independent processes that share a PostgreSQL data
 
 ## Relay Lifecycle
 
-A relay URL progresses through several states as different services process it:
+A relay URL can exist in several states. Services operate independently on whatever data is available in the database — there is no pipeline or ordering dependency between them.
 
 ```
-Seed files / APIs / NIP-65 events
+Seed files / APIs / event tags
         │
         ▼
 ┌───────────────┐
 │   Candidate   │  Seeder and Finder insert URLs
-│   (URL only)  │  into the candidate pool
-└───────┬───────┘
-        │
-        ▼
+│   (URL only)  │  into service_state as candidates
+└───────────────┘
+
 ┌───────────────┐
 │   Validated   │  Validator tests WebSocket connectivity
-│    Relay      │  and promotes to the relay table
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│   Monitored   │  Monitor fetches NIP-11 metadata and
-│    Relay      │  runs NIP-66 health tests
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│   Synced      │  Synchronizer collects events
-│    Relay      │  using cursor-based pagination
+│    Relay      │  and promotes candidates to the relay table
 └───────────────┘
+
+┌───────────────┐                  ┌───────────────┐
+│   Monitored   │                  │   Synced      │
+│    Relay      │                  │    Relay      │
+│               │                  │               │
+│  Monitor runs │                  │ Synchronizer  │
+│  NIP-11 +     │                  │ collects      │
+│  NIP-66 tests │                  │ events        │
+└───────────────┘                  └───────────────┘
 ```
 
-Each transition is independent. A relay can be validated but not yet monitored. A relay can be monitored but not yet synced. Services pick up work based on their own schedules and the current state of the database.
+The only hard dependency is: a relay must be in the `relay` table (validated) before the Monitor or Synchronizer can process it. Beyond that, services are fully independent — they pick up work based on their own schedules and the current state of the database. A relay can be monitored but never synced, or synced but never monitored.
 
 ## Data Entities
 

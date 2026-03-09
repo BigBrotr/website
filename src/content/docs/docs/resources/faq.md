@@ -19,7 +19,7 @@ Clearnet (wss://), Tor (.onion), I2P (.b32.i2p), and Lokinet (.loki). Each netwo
 
 ### What Nostr events does the Monitor publish?
 
-When configured with Nostr keys, the Monitor publishes kind 10166 (replaceable relay monitor) and kind 30166 (parameterized replaceable relay monitor) events containing health check results.
+When configured with Nostr keys, the Monitor publishes kind 0 (profile metadata), kind 10166 (replaceable relay monitor announcement), and kind 30166 (parameterized replaceable relay discovery) events containing health check results. The Dvm service publishes kind 6050 (job results), kind 7000 (feedback), and kind 31990 (NIP-89 handler announcement) events.
 
 ## Architecture
 

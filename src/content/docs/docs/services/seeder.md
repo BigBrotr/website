@@ -7,7 +7,7 @@ The Seeder is a **one-shot** service that bootstraps the relay discovery process
 
 ## Purpose
 
-Before the Finder can discover relays from NIP-65 events and APIs, there must be initial relay URLs in the database. The Seeder provides this bootstrap by loading curated seed files containing known relay URLs.
+Before the Finder can discover relays from event tags and APIs, there must be initial relay URLs in the database. The Seeder provides this bootstrap by loading curated seed files containing known relay URLs.
 
 ## How It Works
 

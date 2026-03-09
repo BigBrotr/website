@@ -65,6 +65,8 @@ All views are refreshed using `REFRESH MATERIALIZED VIEW CONCURRENTLY`, which:
 - Requires a **unique index** on each view (provided by the schema).
 - Takes longer than a non-concurrent refresh but avoids blocking consumers.
 
+The `all_statistics_refresh` function refreshes all views in dependency order in a single call.
+
 ## Refresh Schedule
 
 The Refresher service controls the refresh cycle. By default, all 11 views are refreshed once per hour. Views are refreshed in dependency order — `relay_metadata_latest` first (since other views may depend on its data), then the rest.

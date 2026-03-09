@@ -28,6 +28,7 @@ interval: 120  # seconds between cycles
 
 processing:
   chunk_size: 100    # candidates per cycle
+  allow_insecure: false  # SSL fallback for invalid certificates
 
 networks:
   clearnet:

@@ -7,16 +7,16 @@ BigBrotr runs eight independent services. Each service is a separate process wit
 
 ## Service Summary
 
-| Service | Mode | Responsibility |
-|---------|------|---------------|
-| [Seeder](/docs/services/seeder/) | One-shot | Load relay URLs from seed files and known relay lists |
-| [Finder](/docs/services/finder/) | Continuous | Discover new relay URLs from NIP-65 events and public APIs |
-| [Validator](/docs/services/validator/) | Continuous | Test WebSocket connectivity and promote candidates to relay table |
-| [Monitor](/docs/services/monitor/) | Continuous | NIP-11 + NIP-66 health checks, optionally publish monitoring events |
-| [Refresher](/docs/services/refresher/) | Scheduled | Orchestrate materialized view refresh cycles |
-| [Synchronizer](/docs/services/synchronizer/) | Continuous | Cursor-based event collection from validated relays |
-| Api | Continuous | REST API with automatic schema discovery, filtering, sorting, pagination |
-| Dvm | Continuous | NIP-90 Data Vending Machine for native Nostr protocol access |
+| Service | Role | Interval | External I/O |
+|---------|------|----------|--------------|
+| [Seeder](/docs/services/seeder/) | Bootstrap from seed file | One-shot (`--once`) | File I/O |
+| [Finder](/docs/services/finder/) | Discover from APIs + events | 1 hour | HTTP APIs, event scan |
+| [Validator](/docs/services/validator/) | WebSocket handshake test | 8 hours | WebSocket |
+| [Monitor](/docs/services/monitor/) | NIP-11 + NIP-66 health checks | 1 hour | HTTP, WS, DNS, SSL, GeoIP |
+| [Synchronizer](/docs/services/synchronizer/) | Archive events from relays | 15 min | WebSocket |
+| [Refresher](/docs/services/refresher/) | Refresh materialized views | 1 hour | None (DB only) |
+| [Api](/docs/services/api/) | Read-only REST API | Continuous | HTTP (FastAPI) |
+| [Dvm](/docs/services/dvm/) | NIP-90 Data Vending Machine | 1 min | WebSocket (Nostr) |
 
 ## Independence
 
@@ -33,7 +33,8 @@ Each service:
 All eight services inherit from `BaseService[ConfigT]`, a generic abstract base class that provides:
 
 - **`run()`** — abstract method implementing one work cycle.
-- **`run_forever()`** — loop that calls `run()` repeatedly with sleep intervals and graceful shutdown.
+- **`cleanup()`** — abstract method for pre-cycle cleanup, called before `run()`, returns count of removed items.
+- **`run_forever()`** — loop that calls cleanup → run → metrics → wait → repeat, with graceful shutdown.
 - **`from_yaml()` / `from_dict()`** — factory methods that construct the service from YAML configuration.
 - **Prometheus metrics** — automatic cycle duration, service info, and custom counters.
 - **Structured logging** — via the `Logger` class with key=value format.
@@ -65,6 +66,13 @@ Each network type has its own `ClearnetConfig`, `TorConfig`, `I2pConfig`, or `Lo
 
 The `services/common/` package provides building blocks used across all services:
 
-- **`configs.py`** — per-network Pydantic configuration models with sensible defaults.
-- **`queries.py`** — 15 domain-specific SQL query functions, centralized to avoid scattering inline SQL.
-- **`mixins.py`** — `ChunkProgress` for cycle tracking, `NetworkSemaphoresMixin` for per-network concurrency control, `GeoReaders` for GeoIP database lifecycle.
+- **`configs.py`** — per-network Pydantic configuration models (`ClearnetConfig`, `TorConfig`, `I2pConfig`, `LokiConfig`) with `NetworksConfig` container, plus `TableConfig` for per-table access policy.
+- **`queries.py`** — batch insert utilities (`batched_insert`, `upsert_service_states`). Domain-specific SQL queries are distributed across service-specific `queries.py` modules.
+- **`mixins.py`** — 5 cooperative mixins using `super().__init__(**kwargs)` via MRO:
+  - `ConcurrentStreamMixin` — `_iter_concurrent()` with `asyncio.TaskGroup` + Queue streaming (Finder, Validator, Monitor, Synchronizer)
+  - `NetworkSemaphoresMixin` — per-network `asyncio.Semaphore` from config (Validator, Monitor, Synchronizer)
+  - `GeoReaderMixin` — GeoIP database lifecycle with async open/close (Monitor)
+  - `ClientsMixin` — managed Nostr client pool with per-relay proxy URL resolution (Monitor)
+  - `CatalogAccessMixin` — schema discovery + table access policy (Api, Dvm)
+- **`catalog.py`** — `Catalog` runtime schema introspection and safe parameterized query builder, raises `CatalogError` to prevent leaking database internals.
+- **`types.py`** — `Checkpoint` hierarchy (Api, Monitor, Publish, Candidate) and `Cursor` hierarchy (Sync, Finder).

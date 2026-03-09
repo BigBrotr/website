@@ -59,12 +59,12 @@ BigBrotr is organized into five packages, each with a single clear responsibilit
 
 | Test | MetadataType | Measures |
 |------|-------------|----------|
-| RTT | `NIP66_RTT` | WebSocket round-trip time in milliseconds |
-| SSL | `NIP66_SSL` | Certificate validity, expiration, issuer |
-| DNS | `NIP66_DNS` | Resolution time, IP addresses, DNSSEC |
-| Geo | `NIP66_GEO` | Country, city, ASN, coordinates via GeoIP |
-| Net | `NIP66_NET` | AS number, ISP name, network prefix |
-| HTTP | `NIP66_HTTP` | HTTP status, headers, redirect chain |
+| RTT | `NIP66_RTT` | 3-phase WebSocket latency: open, read, write (milliseconds) |
+| SSL | `NIP66_SSL` | Certificate validity, expiration, issuer, SANs, cipher, fingerprint (SHA-256) |
+| DNS | `NIP66_DNS` | A, AAAA, CNAME, NS, PTR records, TTL |
+| Geo | `NIP66_GEO` | Country, city, coordinates, timezone, geohash (precision 9) via GeoLite2-City |
+| Net | `NIP66_NET` | AS number, ISP name, CIDR network ranges (IPv4 + IPv6) via GeoLite2-ASN |
+| HTTP | `NIP66_HTTP` | Server and X-Powered-By headers from WebSocket upgrade handshake |
 
 NIP-11 produces `MetadataType.NIP11_INFO`.
 
@@ -84,7 +84,8 @@ NIP-11 produces `MetadataType.NIP11_INFO`.
 | `http.py` | Bounded JSON reading and file downloads with size limits. |
 | `dns.py` | DNS resolution utilities for relay URL validation. |
 | `keys.py` | `load_keys_from_env()`, `KeysConfig` Pydantic model — Nostr key management for event signing and publishing. |
-| `parsing.py` | Model parsing utilities for data extraction. |
+| `parsing.py` | `safe_parse()` — tolerant data parsing that catches and logs failures without crashing. |
+| `streaming.py` | Data-driven windowing algorithm for streaming Nostr events with completeness guarantees and binary-split fallback. |
 
 **Key patterns:**
 
@@ -94,24 +95,28 @@ NIP-11 produces `MetadataType.NIP11_INFO`.
 
 ## services
 
-**Business logic.** Six independent services, each inheriting `BaseService[ConfigT]` and implementing `async def run()`.
+**Business logic.** Eight independent services, each inheriting `BaseService[ConfigT]` and implementing `async def run()`.
 
 | Service | Mode | Purpose |
 |---------|------|---------|
 | `seeder` | One-shot | Load relay URLs from seed files and known relay lists |
-| `finder` | Continuous | Discover relay URLs from NIP-65 events and public APIs |
+| `finder` | Continuous | Discover relay URLs from event tags and public APIs |
 | `validator` | Continuous | Test WebSocket connectivity, promote candidates to relay table |
 | `monitor` | Continuous | NIP-11 + NIP-66 health checks, publish kind 10166/30166 events |
 | `refresher` | Scheduled | Orchestrate materialized view refresh cycles |
 | `synchronizer` | Continuous | Cursor-based event collection from validated relays |
+| `api` | Continuous | FastAPI read-only HTTP API for relay and event data |
+| `dvm` | Continuous | NIP-90 Data Vending Machine for Nostr-native data access |
 
 **Shared infrastructure** in `services/common/`:
 
 | Module | Contents |
 |--------|----------|
 | `configs.py` | Per-network Pydantic models: `ClearnetConfig`, `TorConfig`, `I2pConfig`, `LokiConfig` with timeouts, proxy URLs, concurrency limits |
-| `queries.py` | 15 domain-specific SQL query functions. Centralized to avoid scattering inline SQL. |
-| `mixins.py` | `ChunkProgress` (cycle tracking), `NetworkSemaphoresMixin` (per-network concurrency), `GeoReaders` (GeoIP database lifecycle) |
+| `queries.py` | Batch insert utilities (`batched_insert`, `upsert_service_states`). Domain queries distributed across service-specific modules. |
+| `mixins.py` | 5 cooperative mixins: `ConcurrentStreamMixin` (TaskGroup streaming), `NetworkSemaphoresMixin` (per-network concurrency), `GeoReaderMixin` (GeoIP lifecycle), `ClientsMixin` (Nostr client pool), `CatalogAccessMixin` (schema discovery) |
+| `catalog.py` | `Catalog` — runtime schema introspection and safe parameterized query builder, raises `CatalogError` to prevent leaking database internals |
+| `types.py` | `Checkpoint` hierarchy (Api, Monitor, Publish, Candidate) and `Cursor` hierarchy (Sync, Finder) |
 
 ## Next Steps
 

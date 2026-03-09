@@ -27,14 +27,14 @@ Fetches the NIP-11 Relay Information Document via HTTP(S). This JSON document de
 
 Runs six independent health tests:
 
-| Test | What It Measures |
-|------|-----------------|
-| **RTT** | WebSocket round-trip time in milliseconds |
-| **SSL** | Certificate validity, expiration date, issuer chain |
-| **DNS** | Resolution time, resolved IP addresses, DNSSEC status |
-| **Geo** | Country, city, ASN, coordinates (MaxMind GeoIP) |
-| **Net** | Autonomous System number, ISP name, network prefix |
-| **HTTP** | HTTP status code, response headers, redirect chain |
+| Test | What It Measures | Networks |
+|------|-----------------|----------|
+| **RTT** | WebSocket round-trip time — 3-phase: open, read, write (ms) | All |
+| **SSL** | Certificate validity, expiration date, issuer, SANs, cipher | Clearnet only |
+| **DNS** | A/AAAA/CNAME/NS/PTR records, TTL | Clearnet only |
+| **Geo** | Country, city, coordinates, timezone, geohash (GeoLite2-City) | Clearnet only |
+| **Net** | AS number, ISP name, network ranges (GeoLite2-ASN) | Clearnet only |
+| **HTTP** | Server header, X-Powered-By | All |
 
 ### Result Storage
 
@@ -46,8 +46,9 @@ Results are stored via `relay_metadata_insert_cascade`, which atomically inserts
 
 When configured with Nostr keys, the Monitor publishes monitoring results as Nostr events:
 
-- **Kind 10166** — replaceable relay monitoring event
-- **Kind 30166** — parameterized replaceable relay monitoring event
+- **Kind 0** — profile metadata (Monitor identity)
+- **Kind 10166** — replaceable relay monitoring announcement (capabilities, networks)
+- **Kind 30166** — parameterized replaceable relay discovery event (per-relay health data)
 
 These events are broadcast to configured relays, allowing other Nostr clients to consume health data.
 

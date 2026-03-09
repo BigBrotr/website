@@ -9,20 +9,24 @@ The Finder is a **continuous** service that discovers new relay URLs from multip
 
 The Nostr network is constantly growing. New relays appear daily. The Finder ensures BigBrotr's relay list stays current by discovering URLs from two sources:
 
-1. **NIP-65 events** — Nostr events of kind 10002 that declare relay lists.
-2. **Public APIs** — External services that aggregate relay information.
+1. **Event tag mining** — scans archived events for relay URLs in tag values (kind-agnostic, not limited to NIP-65).
+2. **External APIs** — HTTP endpoints that aggregate relay information, parsed with configurable JMESPath expressions.
 
 ## How It Works
 
 ### Event Scanning
 
-The Finder scans collected Nostr events for relay URLs. NIP-65 events (kind 10002) contain lists of relays that users write to or read from. The Finder extracts these URLs and inserts any previously unseen URLs as candidates.
+The Finder scans archived events for relay URLs embedded in tag values. This is **kind-agnostic** — it extracts relay URLs from all event tags, not just NIP-65 relay lists. For each relay in the database, the Finder cursor-paginates through events using composite cursors `(seen_at, event_id)` for deterministic ordering. Cursors are persisted in the `service_state` table, so the Finder resumes where it left off after restarts.
 
-It also scans other event kinds that may contain relay URLs in their tags (e.g., NIP-65 relay list metadata, relay recommendation events).
+Event scanning runs concurrently across relays via `ConcurrentStreamMixin`, bounded by a configurable `parallel_relays` semaphore.
 
 ### API Discovery
 
-The Finder queries public APIs that aggregate relay information. API endpoints are configured per-source, and responses are parsed using JMESPath expressions for flexible extraction regardless of API response format.
+The Finder queries public APIs that aggregate relay information. API endpoints are configured per-source with individual `timeout`, `connect_timeout`, and `allow_insecure` settings. Responses are parsed using JMESPath expressions for flexible extraction regardless of API response format. A configurable `cooldown` prevents re-querying the same source too frequently, and `request_delay` adds politeness between API calls.
+
+### Cleanup
+
+Each cycle starts with cleanup: `delete_stale_cursors()` removes cursor state for deleted relays, and `delete_stale_api_checkpoints()` removes state for removed API sources.
 
 ## Configuration
 
@@ -30,24 +34,23 @@ The Finder queries public APIs that aggregate relay information. API endpoints a
 # config/services/finder.yaml
 interval: 300  # seconds between cycles
 
-concurrency:
-  max_parallel_api: 5
-  max_parallel_events: 10
-
 events:
   enabled: true
-  batch_size: 1000
+  batch_size: 100
+  parallel_relays: 50
+  max_relay_time: null   # per-relay time limit
+  max_duration: 86400    # overall event scan time limit
 
 api:
   enabled: true
-  delay_between_requests: 1.0
-  verify_ssl: true
+  cooldown: 86400        # seconds before re-querying a source
+  request_delay: 1.0     # politeness delay between API calls
   max_response_size: 5242880
   sources:
     - url: https://api.nostr.watch/v1/online
-      jmespath: "[*]"
-    - url: https://api.nostr.watch/v1/public
-      jmespath: "[*]"
+      expression: "[*]"
+      timeout: 30
+      allow_insecure: false
 ```
 
 The Finder does not use per-network configuration since it queries APIs over HTTP and scans events from the local database.

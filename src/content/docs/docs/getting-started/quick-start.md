@@ -69,6 +69,12 @@ python -m bigbrotr refresher
 
 # Event collection
 python -m bigbrotr synchronizer
+
+# REST API
+python -m bigbrotr api
+
+# NIP-90 Data Vending Machine
+python -m bigbrotr dvm
 ```
 
 ## 5. Verify

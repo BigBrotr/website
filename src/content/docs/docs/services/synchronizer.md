@@ -3,7 +3,7 @@ title: Synchronizer
 description: Continuous service that collects events from validated relays.
 ---
 
-The Synchronizer is a **continuous** service that collects Nostr events from validated relays using cursor-based pagination. It is the primary data ingestion service, responsible for building BigBrotr's event archive.
+The Synchronizer is a **continuous** service that collects Nostr events from validated relays using binary-split windowing with cursor-based resumption. It is the primary data ingestion service, responsible for building BigBrotr's event archive.
 
 ## Purpose
 
@@ -11,19 +11,22 @@ The Synchronizer answers: *What events are relays publishing?* It connects to va
 
 ## How It Works
 
-1. Fetches a batch of validated relays to synchronize.
-2. For each relay, grouped by network type:
-   - Retrieves the sync cursor (last seen event timestamp) from `service_state`.
-   - Opens a WebSocket connection to the relay.
-   - Subscribes to events newer than the cursor.
-   - Receives events until the relay signals end-of-stored-events (EOSE).
-   - Stores events via `event_relay_insert_cascade` (atomic multi-table insert).
-   - Updates the sync cursor in `service_state`.
-3. Sleeps, then repeats.
+1. Fetches all validated relays, shuffles them (`random.shuffle` to prevent thundering herd).
+2. Loads per-relay cursor state from `service_state`.
+3. For each relay (concurrently via `ConcurrentStreamMixin`, bounded by per-network semaphores):
+   - Opens a WebSocket connection (with SSL fallback if `allow_insecure`).
+   - Streams events via the `stream_events()` windowing algorithm from `utils/streaming.py`.
+   - Buffers events, batch-inserts via `event_relay_insert_cascade` (atomic multi-table insert).
+   - Updates the sync cursor in `service_state` (batched writes every `flush_interval` relays).
+4. Sleeps, then repeats.
 
-### Cursor-Based Pagination
+### Data-Driven Windowing
 
-Each relay maintains its own sync cursor stored in the `service_state` table. The cursor is a Unix timestamp representing the most recent event collected from that relay. On each cycle, the Synchronizer requests only events newer than the cursor, avoiding re-downloading previously collected events.
+The Synchronizer uses a windowing algorithm with completeness guarantees. For each relay, the time range is divided into windows. After fetching events in a window, the algorithm **verifies completeness** by re-fetching at `min(created_at)`. If the relay's response appears incomplete (e.g., the relay enforces a lower internal limit), the window is split in half (binary split) and retried. This ensures no events are missed even from high-volume relays.
+
+### Cursor-Based Resumption
+
+Each relay maintains its own `SyncCursor(key, timestamp, id)` stored in the `service_state` table. On restart, the Synchronizer resumes where it left off. Cursor writes are batched (flushed every `flush_interval` relays) with a mutex protecting concurrent buffer access.
 
 ### Content-Addressed Storage
 
@@ -35,12 +38,9 @@ Events are stored by their Nostr event ID (a SHA-256 hash). If the same event is
 # config/services/synchronizer.yaml
 interval: 300  # seconds between cycles
 
-filter:
-  limit: 500   # max events per relay request
-
-time_range:
-  use_relay_state: true
-  lookback_seconds: 86400
+limit: 500             # max events per relay window
+flush_interval: 50     # flush cursors every N relays
+allow_insecure: false  # SSL fallback for invalid certificates
 
 networks:
   clearnet:
@@ -53,8 +53,9 @@ networks:
     proxy_url: socks5://tor:9050
 
 timeouts:
-  relay_clearnet: 1800
-  relay_tor: 3600
+  clearnet: 1800       # per-relay sync timeout (clearnet)
+  tor: 3600            # per-relay sync timeout (Tor)
+  max_duration: null   # overall phase time cap (null = unlimited)
 ```
 
 ## Usage

@@ -8,32 +8,69 @@ BigBrotr uses PostgreSQL 16 with a schema designed around immutability, content-
 ## Entity Relationship Diagram
 
 ```
-relay                           event
-├─ url (PK, TEXT)               ├─ id (PK, BYTEA)
-├─ network (TEXT)               ├─ pubkey (BYTEA)
-└─ discovered_at (BIGINT)      ├─ created_at (BIGINT)
-     │                          ├─ kind (INTEGER)
-     │                          ├─ tags (JSONB)
-     │                          ├─ tagvalues (TEXT[], generated)
-     │                          ├─ content (TEXT)
-     │                          └─ sig (BYTEA)
-     │                               │
-     ├──────────┐    ┌───────────────┘
-     ▼          ▼    ▼
-relay_metadata       event_relay
-├─ relay_url (FK)    ├─ event_id (FK → event)
-├─ metadata_id (FK)  ├─ relay_url (FK → relay)
-├─ metadata_type(FK) └─ seen_at (BIGINT)
-└─ generated_at
-     │
-     ▼
-metadata                    service_state
-├─ id (PK, BYTEA)          ├─ service_name (TEXT)
-├─ metadata_type (PK,TEXT) ├─ state_type (TEXT)
-└─ data (JSONB)            ├─ state_key (TEXT)
-                           ├─ state_value (JSONB)
-                           └─ updated_at (BIGINT)
+┌──────────────────────────┐                  ┌──────────────────────────────┐
+│          relay           │                  │            event             │
+├──────────────────────────┤                  ├──────────────────────────────┤
+│ url           TEXT    PK │                  │ id            BYTEA      PK  │
+│ network       TEXT       │                  │ pubkey        BYTEA         │
+│ discovered_at BIGINT     │                  │ created_at    BIGINT        │
+└─────────┬────────────────┘                  │ kind          INTEGER       │
+          │                                   │ tags          JSONB         │
+          │ referenced by                     │ tagvalues     TEXT[]   (gen)│
+          │ event_relay.relay_url             │ content       TEXT          │
+          │ relay_metadata.relay_url          │ sig           BYTEA         │
+          │                                   └──────────────┬───────────────┘
+          │                                                  │
+          │         ┌────────────────────────────────────────┘
+          │         │ referenced by
+          │         │ event_relay.event_id
+          │         │
+          ▼         ▼
+┌───────────────────────────────┐
+│         event_relay           │
+├───────────────────────────────┤
+│ event_id  BYTEA   FK → event  │
+│ relay_url TEXT    FK → relay  │
+│ seen_at   BIGINT              │
+├───────────────────────────────┤
+│ PK (event_id, relay_url)      │
+└───────────────────────────────┘
+
+
+┌──────────────────────────┐
+│          relay           │
+│      (relay_url FK)      │
+└─────────┬────────────────┘
+          │
+          ▼
+┌─────────────────────────────────┐       ┌───────────────────────────────┐
+│        relay_metadata           │       │          metadata             │
+├─────────────────────────────────┤       ├───────────────────────────────┤
+│ relay_url      TEXT  FK → relay │       │ id             BYTEA      PK │
+│ metadata_id    BYTEA ─── FK ──────────→ │ type           TEXT       PK │
+│ metadata_type  TEXT  ─── FK ──────────→ │ data           JSONB        │
+│ generated_at   BIGINT           │       └───────────────────────────────┘
+├─────────────────────────────────┤
+│ PK (relay_url, generated_at,    │       Compound FK:
+│     metadata_type)              │       (metadata_id, metadata_type)
+└─────────────────────────────────┘       → metadata(id, type)
+
+
+┌───────────────────────────────┐
+│        service_state          │
+├───────────────────────────────┤
+│ service_name  TEXT            │   Standalone table — no FK
+│ state_type    TEXT            │   relationships. Used by all
+│ state_key     TEXT            │   services for checkpoints,
+│ state_value   JSONB           │   cursors, and state tracking.
+│ updated_at    BIGINT          │
+├───────────────────────────────┤
+│ PK (service_name, state_type, │
+│     state_key)                │
+└───────────────────────────────┘
 ```
+
+The schema has two independent subgraphs: the **relay/event data** graph (5 tables connected by foreign keys) and the **service_state** table (standalone, used by all services for checkpoints and cursors).
 
 ## Tables
 
@@ -81,10 +118,10 @@ Content-addressed metadata store. Same data always produces the same ID via SHA-
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | `BYTEA` (composite PK) | SHA-256 hash of canonical JSON `data` field |
-| `metadata_type` | `TEXT` (composite PK) | Metadata type (nip11_info, nip66_rtt, nip66_ssl, etc.) |
+| `type` | `TEXT` (composite PK) | Metadata type (nip11_info, nip66_rtt, nip66_ssl, etc.) |
 | `data` | `JSONB` | Metadata payload |
 
-The composite primary key `(id, metadata_type)` means deduplication operates within each metadata type.
+The composite primary key `(id, type)` means deduplication operates within each metadata type.
 
 ### relay_metadata
 
@@ -94,10 +131,10 @@ Junction table linking relays to their metadata with timestamps.
 |--------|------|-------------|
 | `relay_url` | `TEXT` (FK → relay) | Relay URL |
 | `metadata_id` | `BYTEA` (compound FK) | References metadata.id |
-| `metadata_type` | `TEXT` (compound FK) | References metadata.metadata_type |
+| `metadata_type` | `TEXT` (compound FK) | References metadata.type |
 | `generated_at` | `BIGINT` | Unix timestamp when metadata was generated |
 
-Composite PK: `(relay_url, generated_at, metadata_type)`. Compound FK `(metadata_id, metadata_type)` references `metadata(id, metadata_type)`.
+Composite PK: `(relay_url, generated_at, metadata_type)`. Compound FK `(metadata_id, metadata_type)` references `metadata(id, type)`.
 
 ### service_state
 

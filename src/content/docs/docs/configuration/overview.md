@@ -16,7 +16,9 @@ config/
     ├── validator.yaml
     ├── monitor.yaml
     ├── refresher.yaml
-    └── synchronizer.yaml
+    ├── synchronizer.yaml
+    ├── api.yaml
+    └── dvm.yaml
 ```
 
 ## Loading Order
