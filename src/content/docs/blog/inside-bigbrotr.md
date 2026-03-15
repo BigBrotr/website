@@ -7,6 +7,7 @@ tags:
   - architecture
   - deep-dive
   - nostr
+description: A technical deep dive into BigBrotr's architecture — eight services, ~18,000 lines of Python, 25 stored procedures, 11 materialized views, and the design decisions behind a Nostr relay observatory.
 excerpt: A technical deep dive into BigBrotr's architecture — eight services, ~18,000 lines of Python, 25 stored procedures, 11 materialized views, and the design decisions behind a Nostr relay observatory.
 ---
 

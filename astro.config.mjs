@@ -20,6 +20,7 @@ export default defineConfig({
         },
       ],
       components: {
+        Head: "./src/components/Head.astro",
         Header: "./src/components/Header.astro",
         ThemeSelect: "./src/components/ThemeSelect.astro",
         MobileMenuFooter: "./src/components/MobileMenuFooter.astro",
@@ -37,15 +38,7 @@ export default defineConfig({
           },
         }),
       ],
-      head: [
-        {
-          tag: "meta",
-          attrs: {
-            property: "og:image",
-            content: "https://bigbrotr.com/og-image.png",
-          },
-        },
-      ],
+      head: [],
       sidebar: [
         {
           label: "Getting Started",

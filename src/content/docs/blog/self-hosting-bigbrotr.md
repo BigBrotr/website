@@ -8,6 +8,7 @@ tags:
   - self-hosting
   - infrastructure
   - postgresql
+description: A complete walkthrough for deploying BigBrotr on your own hardware — Proxmox, ZFS storage pools tuned for PostgreSQL, Docker Compose orchestration, Cloudflare Tunnel for zero-port API exposure, and production hardening. No cloud, no monthly bill, full control.
 excerpt: A complete walkthrough for deploying BigBrotr on your own hardware — Proxmox, ZFS storage pools tuned for PostgreSQL, Docker Compose orchestration, Cloudflare Tunnel for zero-port API exposure, and production hardening. No cloud, no monthly bill, full control.
 ---
 

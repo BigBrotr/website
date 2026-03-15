@@ -8,6 +8,7 @@ tags:
   - nostr
   - infrastructure
   - comparison
+description: A deep technical comparison of two open-source projects that index the Nostr network — BigBrotr (Python/PostgreSQL relay observatory) and Pensieve (Rust/ClickHouse event archive). Same network, different questions, radically different architectures.
 excerpt: A deep technical comparison of two open-source projects that index the Nostr network — BigBrotr (Python/PostgreSQL relay observatory) and Pensieve (Rust/ClickHouse event archive). Same network, different questions, radically different architectures.
 ---
 

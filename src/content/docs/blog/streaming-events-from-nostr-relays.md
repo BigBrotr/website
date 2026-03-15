@@ -7,6 +7,7 @@ tags:
   - tutorial
   - nostr
   - streaming
+description: Dumping every event from a Nostr relay should be simple — pick your filters, set a time window, iterate. With BigBrotr's stream_events, it is.
 excerpt: Dumping every event from a Nostr relay should be simple — pick your filters, set a time window, iterate. With BigBrotr's stream_events, it is.
 ---
 

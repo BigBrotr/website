@@ -8,6 +8,7 @@ tags:
   - nostr
   - monitoring
   - nip-66
+description: There's a wealth of data you can extract from a Nostr relay — why settle for less? Build a fully NIP-66 compliant monitor in under 80 lines of Python.
 excerpt: There's a wealth of data you can extract from a Nostr relay — why settle for less? Build a fully NIP-66 compliant monitor in under 80 lines of Python.
 ---
 

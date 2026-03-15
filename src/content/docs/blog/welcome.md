@@ -5,6 +5,7 @@ authors:
   - bigbrotr
 tags:
   - announcement
+description: Introducing BigBrotr — a distributed relay observatory for the Nostr network built with Python and PostgreSQL.
 excerpt: Introducing BigBrotr — a distributed relay observatory for the Nostr network built with Python and PostgreSQL.
 ---
 
