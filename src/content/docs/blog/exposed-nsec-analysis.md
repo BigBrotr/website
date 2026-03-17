@@ -1,5 +1,5 @@
 ---
-title: "Finding 16,000 Exposed Private Keys Across the Nostr Network"
+title: "Uncovering 16,000 Exposed Private Keys Across the Nostr Network"
 date: 2026-03-17
 authors:
   - bigbrotr
