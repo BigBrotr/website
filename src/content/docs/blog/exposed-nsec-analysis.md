@@ -1,5 +1,5 @@
 ---
-title: "16,000 Private Keys Exposed: An Analysis of Leaked nsec Strings on the Nostr Network"
+title: "Finding 16,000 Exposed Private Keys Across the Nostr Network"
 date: 2026-03-17
 authors:
   - bigbrotr
