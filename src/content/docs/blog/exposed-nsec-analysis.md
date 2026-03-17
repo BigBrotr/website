@@ -105,13 +105,13 @@ The top 5 leaked accounts by follower count:
 
 | npub | Followers | Events | How Leaked |
 |---|---|---|---|
-| [`npub14ktn...fhukks`](https://njump.me/npub14ktnsqc2hpxqflawce9t4htvc6pvkdgp6xf6tlcujjuswuy324vqfhukks) | 18,435 | 5,279 | Republished by `Mr.nsec` bot |
-| [`npub1fv9u...8tdz3p`](https://njump.me/npub1fv9u4drq4hdrr7k45vn0krqy7mkgy8ajf059m0wq8szvcrsjlsrs8tdz3p) | 13,608 | 1,521 | Republished by `Mr.nsec` bot |
-| [`npub1s6z7...qrdwk4c`](https://njump.me/npub1s6z7hmmx2vud66f3utxd70qem8cwtggx0jgc7gh8pqwz2k8cltuqrdwk4c) | 3,878 | 4,484 | Republished by `Mr.nsec` bot |
-| [`npub138gu...wk36k`](https://njump.me/npub138guayty78ch9k42n3uyz5ch3jcaa3u390647hwq0c83m2lypekq6wk36k) | 2,513 | 7,139 | Republished by `Mr.nsec` bot |
-| [`npub1dnzz...ptwg3qj4x52h`](https://njump.me/npub1dnzzyhmewrzkh862z7z2shwmhh5htx0rvkagepj2fkgst9ptwg3qj4x52h) | 2,494 | 3,194 | Republished by `Mr.nsec` bot |
+| [`npub14ktn...fhukks`](https://njump.me/npub14ktnsqc2hpxqflawce9t4htvc6pvkdgp6xf6tlcujjuswuy324vqfhukks) | 18,435 | 5,279 | nsec in profile `nip05` field |
+| [`npub1fv9u...8tdz3p`](https://njump.me/npub1fv9u4drq4hdrr7k45vn0krqy7mkgy8ajf059m0wq8szvcrsjlsrs8tdz3p) | 13,608 | 1,521 | nsec in profile `name` field |
+| [`npub1s6z7...qrdwk4c`](https://njump.me/npub1s6z7hmmx2vud66f3utxd70qem8cwtggx0jgc7gh8pqwz2k8cltuqrdwk4c) | 3,878 | 4,484 | nsec in profile `name` field |
+| [`npub138gu...wk36k`](https://njump.me/npub138guayty78ch9k42n3uyz5ch3jcaa3u390647hwq0c83m2lypekq6wk36k) | 2,513 | 7,139 | nsec in profile `name` field |
+| [`npub1dnzz...ptwg3qj4x52h`](https://njump.me/npub1dnzzyhmewrzkh862z7z2shwmhh5htx0rvkagepj2fkgst9ptwg3qj4x52h) | 2,494 | 3,194 | nsec in profile `name` field |
 
-Every account in the top 20 by followers was republished by the `Mr.nsec` bot — but the bot only aggregates keys that were already leaked elsewhere. The original leak source for these high-follower accounts is likely profile field confusion or a compromised client.
+In every case, the nsec was published by a *different* account — not by the key's owner. These appear to be bot accounts that create throwaway profiles with the victim's nsec embedded in profile fields like `name` or `nip05`, a variation of the `Mr.nsec` pattern but without the signature format.
 
 ## What Clients and Relay Operators Can Do
 
