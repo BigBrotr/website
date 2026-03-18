@@ -62,16 +62,16 @@ The 2.7% figure is itself inflated by the bot. When we exclude bot-generated key
 
 ![What fraction of leaked keys have social presence — all keys vs non-bot keys](../../../assets/blog/exposed-nsec/fig_05_follower_cdf.png)
 
-## Self-Leak vs Third-Party: A Paradox
+## Self-Leak vs Third-Party
 
-The most important dimension of analysis is **authorship** — did the account owner publish their own nsec, or did someone else?
+Excluding the bot, who published the remaining 1,314 organically leaked keys?
 
 | Authorship | Keys | % of keys | Followers exposed | % of followers |
 |------------|-----:|----------:|------------------:|---------------:|
-| Self-leak | 16,027 | 96.6% | 26,982 | 30% |
-| Third-party | 571 | 3.4% | 63,944 | **70%** |
+| Self-leak | 742 | 56.5% | 26,924 | 29.6% |
+| Third-party | 572 | 43.5% | 63,945 | **70.4%** |
 
-**96.6% of leaked keys are self-leaks** — the account owner published their own private key. Most commonly by pasting it into a profile field, confusing it with their npub. But the 3.4% of third-party leaks cause **70% of all follower exposure**, because third parties disproportionately expose keys belonging to accounts with social presence.
+The split is nearly even by key count — **56% self-leak, 44% third-party.** But the follower distribution is heavily skewed: third-party leaks account for **70% of all follower exposure**, because they disproportionately target accounts with social presence. Self-leaks are mostly users pasting their nsec into a profile field, confusing it with their npub — typically new accounts with few followers.
 
 ## Leak Vectors: Key Count vs Social Reach
 
