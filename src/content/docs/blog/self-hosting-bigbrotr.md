@@ -1,6 +1,6 @@
 ---
 title: "Self-Hosting BigBrotr: From Bare Metal to Production in One Afternoon"
-date: 2026-03-15
+date: 2026-03-18
 authors:
   - bigbrotr
 tags:
@@ -14,7 +14,7 @@ excerpt: A complete walkthrough for deploying BigBrotr on your own hardware — 
 
 Running a Nostr relay observatory means storing a lot of data. Events, metadata, health checks, materialized views — the database grows by gigabytes per day once all eight services are humming. Cloud hosting works, but the storage costs add up fast, and you're always one `terraform destroy` away from losing your dataset.
 
-Self-hosting solves that. A dedicated machine with a few terabytes of SSD storage, a properly tuned PostgreSQL, and a Cloudflare Tunnel for secure API exposure gives you everything a cloud deployment would, minus the recurring bill and with the added benefit of full control over your data.
+Self-hosting solves that. A dedicated machine with a few terabytes of SSD storage, a properly tuned PostgreSQL, and a Cloudflare Tunnel for secure API exposure gives you everything a cloud deployment would — minus the recurring bill.
 
 This post walks through the entire deployment: from a fresh Proxmox install to a fully operational BigBrotr instance serving `api.yourdomain.com` over HTTPS with zero inbound ports. It's the same process we used for our own production deployment.
 
@@ -40,7 +40,7 @@ The CPU isn't the bottleneck — PostgreSQL and the services are mostly I/O-boun
 
 ## Why ZFS?
 
-Every disk in the system runs ZFS. Not because it's trendy, but because it solves real problems for a database workload:
+Every disk in the system runs ZFS. It solves specific problems for a database workload that other filesystems don't:
 
 **Data integrity**. ZFS checksums every block. A silent bit flip on a SATA disk doesn't corrupt your `relay` table — ZFS detects it and repairs from the mirror.
 
@@ -95,7 +95,14 @@ work_mem = 64MB                # per-sort/hash, generous for analytics
 maintenance_work_mem = 2GB     # fast VACUUM and CREATE INDEX
 ```
 
-The 25% rule for `shared_buffers` is well-established PostgreSQL wisdom — going higher rarely helps because the OS page cache handles the rest, and that's what `effective_cache_size` tells the query planner about.
+Setting `shared_buffers` to 25% of RAM is the standard starting point — going higher rarely helps because the OS page cache handles the rest, and `effective_cache_size` tells the query planner how much total cache (PostgreSQL + OS) is available. Scale to your hardware:
+
+| RAM | shared_buffers | effective_cache_size | work_mem | maintenance_work_mem |
+|-----|---------------|---------------------|----------|---------------------|
+| 32 GB | 8 GB | 24 GB | 32 MB | 1 GB |
+| 64 GB | 16 GB | 48 GB | 64 MB | 2 GB |
+| 96 GB | 24 GB | 72 GB | 128 MB | 4 GB |
+| 128 GB | 32 GB | 96 GB | 128 MB | 4 GB |
 
 For a write-heavy workload like BigBrotr (the Synchronizer can insert thousands of events per cycle), these settings matter:
 
@@ -160,28 +167,42 @@ The firewall allows PostgreSQL, Grafana, and Prometheus only from the local subn
 
 ## The Production Deployment Folder
 
-One lesson from deploying: keep your production configuration separate from the repository. BigBrotr ships with `deployments/bigbrotr/` as a template. For production, we copy it to `deployments/production/` and add that to `.gitignore`:
+One lesson from deploying: keep your production configuration completely separate from the repository. You don't even need git on the server. BigBrotr ships deployment templates in each release — you download just the deployment folder and run it standalone:
 
 ```bash
-cp -r deployments/bigbrotr deployments/production
-echo "deployments/production/" >> .gitignore
+cd /opt
+VARIANT=bigbrotr  # or lilbrotr
+RELEASE=$(curl -s https://api.github.com/repos/BigBrotr/bigbrotr/releases/latest | grep tarball_url | cut -d '"' -f 4)
+curl -sL "$RELEASE" | tar xz
+mv BigBrotr-bigbrotr-*/deployments/$VARIANT "${VARIANT}-production"
+rm -rf BigBrotr-bigbrotr-*
 ```
 
-Now `git pull` updates source code and the Dockerfile but never touches your PostgreSQL config, `.env` secrets, or port bindings. Updating becomes:
+This gives you a standalone folder at `/opt/bigbrotr-production/` with everything: Docker Compose config, PostgreSQL tuning, PGBouncer settings, monitoring stack, SQL init scripts, and backup script. No repository checkout needed.
+
+Then swap the `build:` blocks in `docker-compose.yaml` for pre-built Docker Hub images:
+
+```yaml
+# Replace every build: block with:
+    image: vincenzoimp/bigbrotr:6    # or vincenzoimp/lilbrotr:6
+```
+
+The `:6` tag always points to the latest 6.x.x release. Updating becomes a single command:
 
 ```bash
-git pull origin main
-cd deployments/production
-docker compose build && docker compose up -d
+cd /opt/bigbrotr-production
+docker compose pull && docker compose up -d
 ```
 
-No merge conflicts, no accidental config overwrites.
+No git, no builds, no merge conflicts. Your local configuration (`.env`, `postgresql.conf`, port bindings) is never touched by updates.
+
+If you don't need full event storage (tags, content, signatures), LilBrotr is a lightweight alternative that uses the same codebase but stores only event metadata — roughly 60% less disk usage. Same deployment process, just swap `bigbrotr` for `lilbrotr` in the variant and image name. Both can even run on the same hardware with isolated databases.
 
 ---
 
 ## What It Looks Like Running
 
-After starting all services with `docker compose up -d`, you get 14 healthy containers:
+After starting all services with `docker compose up -d`, you get 15 containers (14 running at steady state — the Seeder exits after its one-shot run):
 
 - **PostgreSQL 16** — the shared database, tuned for your hardware
 - **PGBouncer** — connection pooling in transaction mode
@@ -206,9 +227,19 @@ No deployment survives first contact without surprises. Here's what bit us on th
 
 **GeoLite2 permission denied.** The Monitor downloads MaxMind GeoIP databases on first run to geolocate relay IPs. It tried to write them to the `static/` directory — which is bind-mounted from the host and owned by root. The container runs as uid 1000. Permission denied, five consecutive failures, service stops. A `chown -R 1000:1000` on the host directory fixed it permanently.
 
-**CPU thermal imbalance on multi-CCD AMD.** Our Ryzen 9 9955HX has two CCDs. Without NUMA awareness, Proxmox scheduled all 12 vCPUs on the first chiplet. CCD1 hit 93°C while CCD2 sat at 52°C. Enabling `qm set 100 --numa 1` on the Proxmox host and rebooting the VM distributed the load across both chiplets. CCD1 dropped to 60°C, CCD2 came up to 47°C. Not every setup needs this, but if you're running a multi-CCD CPU under sustained load, check your per-CCD temperatures with `sensors`.
-
 None of these are BigBrotr bugs — they're infrastructure gotchas that apply to any Docker + PostgreSQL deployment on self-hosted hardware. But they're the kind of thing that wastes hours if you don't know to look for them.
+
+---
+
+## Backups
+
+The deployment folder includes a `backup.sh` script that dumps the database (compressed with gzip) and keeps the 7 most recent dumps. If you have a dedicated backup disk, symlink the `dumps/` directory to it. For automated daily backups:
+
+```bash
+echo '0 4 * * * root /opt/bigbrotr-production/backup.sh >> /var/log/bigbrotr-backup.log 2>&1' > /etc/cron.d/bigbrotr-backup
+```
+
+Since BigBrotr data is re-fetchable from Nostr relays, backups are more about convenience than disaster recovery — restoring from a dump is faster than re-syncing from scratch.
 
 ---
 
@@ -220,6 +251,6 @@ If you're interested in running your own instance:
 2. The [Architecture Deep Dive](/docs/blog/inside-bigbrotr/) explains the service design
 3. Open an issue on [GitHub](https://github.com/BigBrotr/bigbrotr) if you run into problems
 
-BigBrotr is designed to run unattended. Once deployed, the services handle their own lifecycle — retrying failed connections, rotating through relays, refreshing views on schedule. Your main ongoing tasks are checking Grafana occasionally, running `docker compose logs` if an alert fires, and doing a `git pull && docker compose build` when a new release drops.
+BigBrotr is designed to run unattended. Once deployed, the services handle their own lifecycle — retrying failed connections, rotating through relays, refreshing views on schedule. Your main ongoing tasks are checking Grafana occasionally, running `docker compose logs` if an alert fires, and doing a `docker compose pull && docker compose up -d` when a new release drops.
 
-The Nostr network is growing. The more independent observers we have, the better picture we get. Run your own BigBrotr. Own your data.
+The Nostr network is growing. The more independent observers running, the more complete the picture. If you've got spare hardware and a domain, this is a weekend project that keeps paying off.
