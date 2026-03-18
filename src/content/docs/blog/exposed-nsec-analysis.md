@@ -1,5 +1,5 @@
 ---
-title: "Uncovering 16,000 Exposed Private Keys Across the Nostr Network"
+title: "Uncovering Exposed Private Keys Across the Nostr Network"
 date: 2026-03-17
 authors:
   - bigbrotr
@@ -8,127 +8,140 @@ tags:
   - nostr
   - security
   - research
-description: BigBrotr's event archive reveals over 16,000 valid Nostr private keys published in plaintext across the network — most by a single automated attacker, hundreds more by users who confused nsec with npub. A data-driven breakdown of how, where, and why private keys end up in public events.
-excerpt: BigBrotr's event archive reveals over 16,000 valid Nostr private keys published in plaintext across the network — most by a single automated attacker, hundreds more by users who confused nsec with npub. A data-driven breakdown of how, where, and why private keys end up in public events.
+description: We searched 41 million Nostr events for private keys published in plaintext. After filtering out noise, 38 real accounts with over 21,000 combined followers are actively using a compromised key with no signs of awareness.
+excerpt: We searched 41 million Nostr events for private keys published in plaintext. After filtering out noise, 38 real accounts with over 21,000 combined followers are actively using a compromised key with no signs of awareness.
 ---
 
-Your Nostr identity is a key pair. The `npub` is public — share it everywhere. The `nsec` is private — lose it and you lose your account, leak it and anyone can impersonate you. There is no password reset, no support ticket, no recovery. The nsec *is* the account.
+Your Nostr identity is a key pair. The `npub` is public — share it everywhere. The `nsec` is private — leak it and anyone can impersonate you. There is no password reset, no support ticket, no recovery. The nsec *is* the account.
 
-So what happens when thousands of them end up published in plaintext on the very network they're supposed to protect?
+So what happens when private keys end up published in plaintext on the very network they grant access to?
 
-## The Dataset
+We set out to answer this question using BigBrotr's event archive — over **41 million events** collected from **1,085 relays** across clearnet, Tor, and I2P networks over 48 hours of continuous synchronization.
 
-BigBrotr continuously archives events from every reachable relay on the Nostr network. After two days of synchronization across **1,079 relays** (out of 2,006 discovered), the database contained over **40 million events** collected from clearnet, Tor, and I2P networks.
+## Searching for nsec Strings
 
-We searched every event — both the `content` field and `tags` — for strings matching the `nsec1` Bech32 prefix. Each match was then validated by attempting to derive a public key from it using the secp256k1 curve. The synchronizer had not yet reached all relays, meaning the actual number of exposed keys across the full network is likely higher.
+We searched every archived event — both the `content` field and `tags` — for strings matching the `nsec1` Bech32 prefix. Each match was extracted via regex and validated by attempting to derive a public key from it using the secp256k1 curve.
 
 | Metric | Count |
-|---|---|
-| Events containing `nsec1` | 17,666 |
-| Unique nsec strings found | 16,870 |
-| Valid private keys | **16,531** |
-| Invalid (truncated or fake) | 339 |
-| Leaked keys with at least one event posted | 16,432 |
-| Leaked keys with at least one follower | 450 |
+|--------|------:|
+| Events containing `nsec1` | 17,956 |
+| Unique nsec strings found | 16,941 |
+| Valid private keys | **16,599** |
+| Invalid (truncated or fake) | 342 |
 
-16,531 valid Nostr private keys, published in plaintext, recoverable by anyone with access to a relay archive.
+16,599 valid Nostr private keys, published in plaintext, recoverable by anyone with access to a relay archive. But that number is misleading.
 
-## How They Were Leaked
+## The Headline Number Is Noise
 
-Not all leaks are equal. We categorized every event containing a valid nsec by examining its structure, content, and context.
+Anyone can publish a private key — including bots that mass-produce throwaway accounts. A single bot, which we call "Mr.nsec," accounts for **15,285** of those 16,599 keys (92%). It creates throwaway accounts named `Mr.{nsec}` with the bio `"Just your average nostr enjoyer"` — each publishing a single profile event exposing a different private key, each from a unique throwaway pubkey that is never used again.
 
-| Category | nsec Count | Description |
-|---|---|---|
-| **Bot harvester (`Mr.nsec`)** | 15,232 | Automated attacker republishing collected keys |
-| **Profile field confusion** | 871 | Users pasting nsec into name, picture, or about fields |
-| **AI agent testing** | 200 | Automated agents publishing logs containing credentials |
-| **CLI command exposure** | 45 | Commands like `nak event --sec nsec1...` posted in notes |
-| **Bare nsec posts** | 35 | Users posting their nsec with no other context |
-| **Intentional sharing** | 26 | Shared accounts (NostrWall-style experiments) |
-| **Contact list relay field** | 24 | nsec pasted as a relay URL in Kind 3 events |
-| **nsec in tags only** | 23 | Private keys embedded in event tags, not content |
-| **Reposts** | 12 | Reposts of events already containing nsec |
-| **Other** | 63 | Chat messages, long-form articles, status updates |
+By key count, the bot dominates the dataset. But the accounts whose keys it republishes have almost no followers. By social impact, the bot is irrelevant.
 
-Three patterns dominate: a single automated attacker, confused users, and careless AI agents.
+The real question is not *how many keys are exposed* but **how many real identities are at risk**.
 
-### The `Mr.nsec` Bot: 15,232 Keys Republished
+## From 16,599 to 38
 
-The largest single source is an automated operation responsible for over 90% of all leaked nsec events. The pattern is mechanical:
+We applied successive filters to narrow down to the accounts that actually matter:
 
-1. A new Nostr account is created (unique pubkey, never reused)
-2. A single Kind 0 (profile) event is published with the name `Mr.{nsec}` and the bio `"Just your average nostr enjoyer"`
-3. The account is never used again
+![From raw key count to real impact](../../../assets/blog/exposed-nsec/fig_01_impact_funnel.png)
 
-15,232 unique bot accounts, each publishing exactly one event, each exposing a different private key. The bot doesn't generate these keys — it collects nsec strings already exposed elsewhere on the network and republishes them in a more discoverable format.
+| Filter | Keys | % |
+|--------|-----:|--:|
+| nsec1 strings found | 16,941 | 100% |
+| Valid private keys | 16,599 | 98.0% |
+| With at least 1 follower | 463 | 2.7% |
+| Real identity at risk | 86 | 0.5% |
+| Still active (last 90 days) | 40 | 0.24% |
+| **No signs of compromise** | **38** | **0.22%** |
 
-This means the bot is a *second-order* threat: it amplifies leaks that already happened through other channels. But it also means that any key appearing in the `Mr.nsec` dataset was already compromised before the bot found it.
+A "real identity at risk" is defined as: at least 10 followers, a profile with a name, at least 10 events published, and the nsec was not published by the account itself (excluding intentional sharing and self-leaks). Of those 86, we checked which ones were still active and manually inspected each profile for signs of unauthorized use.
 
-### Profile Field Confusion: 871 Keys
+**38 accounts are actively using a compromised key with no visible signs of awareness.** They collectively have over **21,000 followers**. Two additional accounts show clear signs of unauthorized use (profile defaced, spam content).
 
-The second largest category is users who paste their `nsec` into profile fields — the `name`, `picture` URL, or `about` text of their Kind 0 event. This almost certainly happens when users confuse `nsec` (private) with `npub` (public). The two strings look similar: both start with a prefix, followed by a long alphanumeric string.
+The 2.7% figure is itself inflated by the bot. When we exclude bot-generated keys, **35% of organically leaked keys** belong to accounts with at least one follower:
 
-Some clients now warn users when they detect an nsec in a profile field. Not all do.
+![What fraction of leaked keys have social presence — all keys vs non-bot keys](../../../assets/blog/exposed-nsec/fig_05_follower_cdf.png)
 
-### AI Agents and CLI Leaks: 245 Keys
+## Self-Leak vs Third-Party: A Paradox
 
-A growing category. Automated agents — often LLM-powered — publish their operational logs as Nostr events (Kind 1 or Kind 1111). These logs contain commands like:
+The most important dimension of analysis is **authorship** — did the account owner publish their own nsec, or did someone else?
 
-```
-nak event -k 1063 --sec nsec1qxwkwn5fueyzf0h...
-```
+| Authorship | Keys | % of keys | Followers exposed | % of followers |
+|------------|-----:|----------:|------------------:|---------------:|
+| Self-leak | 16,027 | 96.6% | 26,982 | 30% |
+| Third-party | 571 | 3.4% | 63,944 | **70%** |
 
-The agent faithfully publishes its execution log, including the private key passed as a CLI argument. In other cases, agents publish entire conversation transcripts that include nsec strings shared during testing.
+**96.6% of leaked keys are self-leaks** — the account owner published their own private key. Most commonly by pasting it into a profile field, confusing it with their npub. But the 3.4% of third-party leaks cause **70% of all follower exposure**, because third parties disproportionately expose keys belonging to accounts with social presence.
 
-This is a new class of key leak that didn't exist before AI agents started operating on Nostr.
+## Leak Vectors: Key Count vs Social Reach
 
-### Intentional Sharing: 26 Keys
+Within the vector breakdown, the same inversion occurs:
 
-A small number of nsec strings are published deliberately. The most notable example is **NostrWall** — an account created as a public experiment where the creator shared the nsec so anyone could log in and post. The announcement reads:
+![By key count vs by follower exposure — two completely different pictures](../../../assets/blog/exposed-nsec/fig_02_categories.png)
 
-> "Was inspired to create #NostrWall account and share the private key so everyone across the globe can log in and post the note whatever they want"
+By key count, the Mr.nsec bot dominates at 92%. By follower exposure — the metric that actually matters — profile-field leaks dominate at 74%. The bot republished thousands of keys, but they belonged to accounts with near-zero social presence. The real damage is done by users who accidentally pasted their nsec into a profile field. Smaller categories include AI agents publishing credentials in operational logs, nsec strings in contact list relay fields, and bare nsec posts.
 
-The creator published the nsec of a *separate* account (not their own), so their personal identity remains protected. Similar experiments exist in Japanese Nostr communities ("tree hole" accounts) and as testing fixtures.
+## The Organic Leak Rate
 
-## Impact: Who Is Affected?
+Removing the bot reveals the underlying trend of organic key exposure:
 
-Most leaked keys belong to low-activity accounts. But not all.
+![Monthly timeline of leak events with bot excluded](../../../assets/blog/exposed-nsec/fig_03_timeline.png)
 
-| Metric | Value |
-|---|---|
-| Total events posted by leaked accounts | 313,574 |
-| Leaked accounts with >1,000 events | 18 |
-| Leaked accounts with >100 followers | 32 |
-| Most-followed leaked account | 18,435 followers |
+The bot operated in a single burst. The organic rate is steady and ongoing — **a persistent UX problem, not a one-time attack.** As long as clients allow users to paste nsec strings into profile fields without warning, new keys will continue to be exposed.
 
-The top 5 leaked accounts by follower count:
+## Relay Spread
 
-| npub | Followers | Events | How Leaked |
-|---|---|---|---|
-| [`npub14ktn...fhukks`](https://njump.me/npub14ktnsqc2hpxqflawce9t4htvc6pvkdgp6xf6tlcujjuswuy324vqfhukks) | 18,435 | 5,279 | nsec in profile `nip05` field |
-| [`npub1fv9u...8tdz3p`](https://njump.me/npub1fv9u4drq4hdrr7k45vn0krqy7mkgy8ajf059m0wq8szvcrsjlsrs8tdz3p) | 13,608 | 1,521 | nsec in profile `name` field |
-| [`npub1s6z7...qrdwk4c`](https://njump.me/npub1s6z7hmmx2vud66f3utxd70qem8cwtggx0jgc7gh8pqwz2k8cltuqrdwk4c) | 3,878 | 4,484 | nsec in profile `name` field |
-| [`npub138gu...wk36k`](https://njump.me/npub138guayty78ch9k42n3uyz5ch3jcaa3u390647hwq0c83m2lypekq6wk36k) | 2,513 | 7,139 | nsec in profile `name` field |
-| [`npub1dnzz...ptwg3qj4x52h`](https://njump.me/npub1dnzzyhmewrzkh862z7z2shwmhh5htx0rvkagepj2fkgst9ptwg3qj4x52h) | 2,494 | 3,194 | nsec in profile `name` field |
+How many relays serve each leaked key?
 
-In every case, the nsec was published by a *different* account — not by the key's owner. These appear to be bot accounts that create throwaway profiles with the victim's nsec embedded in profile fields like `name` or `nip05`, a variation of the `Mr.nsec` pattern but without the signature format.
+![CDF of relay spread by follower band](../../../assets/blog/exposed-nsec/fig_04_relay_spread.png)
+
+The median leaked key is available on just 1 relay. But accounts with more followers tend to see their leak events on more relays — up to 30+ for the most popular ones. This is expected: popular accounts' events are replicated more widely in general, not just leak events. Regardless of the cause, the practical implication is the same: for accounts with wide relay distribution, deleting the event from one relay is insufficient. **Key rotation is the only reliable remediation.**
+
+## The 38 Accounts That Need to Know
+
+Of the 86 real identities with exposed keys, 40 have posted in the last 90 days. We manually inspected each profile to determine whether the account showed signs of compromise (spam, defaced profile, incoherent content) or appeared to be used normally.
+
+![Tier 1 at-risk identities: followers vs events, active vs inactive](../../../assets/blog/exposed-nsec/fig_06_tier1.png)
+
+**38 accounts show no signs of compromise** — they appear to be used normally by the original owner, who likely does not know their private key is publicly available. Two accounts show clear signs of unauthorized use.
+
+| Followers | Events | Leak date | Last active | Status |
+|----------:|-------:|-----------|-------------|--------|
+| 18,900 | 5,288 | 2024-12-27 | 2026-03-15 | compromised |
+| 13,657 | 1,525 | 2023-11-18 | 2026-02-10 | compromised |
+| 3,995 | 4,485 | 2023-08-24 | 2026-03-15 | no signs |
+| 2,543 | 3,195 | 2024-11-18 | 2026-03-16 | no signs |
+| 1,887 | 102 | 2023-12-01 | 2026-01-24 | no signs |
+| 1,800 | 16,050 | 2023-12-11 | 2026-03-15 | no signs |
+| 1,337 | 525 | 2024-04-12 | 2026-03-15 | no signs |
+| 1,295 | 14,069 | 2023-12-05 | 2026-03-16 | no signs |
+| 1,034 | 8,949 | 2024-11-03 | 2026-03-16 | no signs |
+| 1,006 | 2,349 | 2023-09-17 | 2026-03-16 | no signs |
+
+The remaining 30 accounts (12–851 followers) all show no signs of compromise.
+
+## Check If Your Key Is Exposed
+
+We deployed an [nsec-leak-checker](https://github.com/BigBrotr/nsec-leak-checker) — a Nostr DVM (Data Vending Machine) that lets you check if your private key has been found in public events. Send a Kind 5300 event signed with your keys (with a `p` tag pointing to the DVM's pubkey), and it responds with a NIP-44 encrypted message that only you can read.
 
 ## What Clients and Relay Operators Can Do
 
-This isn't a protocol vulnerability — Nostr's key-based identity model is sound. The leaks are user errors, client oversights, and a new category of AI agent carelessness. Mitigations exist at every layer:
+This isn't a protocol vulnerability — Nostr's key-based identity model is sound. The leaks are user errors, client oversights, and AI agent carelessness.
 
-**Clients** should reject nsec strings in profile fields before signing the event. Some already do. All should. A simple regex check (`/nsec1[a-z0-9]{58}/`) on Kind 0 content before broadcast would eliminate the second largest leak category entirely.
+**Clients** should reject nsec strings in profile fields before signing the event. A regex check on Kind 0 content before broadcast would prevent the most damaging leak category entirely.
 
-**Relay operators** could reject events containing valid nsec strings. This is more aggressive and has trade-offs (false positives on educational content, shared accounts), but it would neutralize the `Mr.nsec` bot completely.
+**Relay operators** could reject events containing valid nsec strings. This is more aggressive and has trade-offs (false positives on educational content, shared accounts), but it would neutralize the bot completely.
 
-**AI agent developers** should sanitize logs before publishing them as events. Private keys, tokens, and credentials have no place in broadcast messages.
+**AI agent developers** should sanitize logs before publishing them as events. Private keys and credentials have no place in broadcast messages.
 
-**Users** should understand the difference: `npub` is your address, `nsec` is your password. If you've ever pasted an `nsec` into a profile field, generate a new key pair immediately.
+**Users** should understand the difference: `npub` is your address, `nsec` is your password. If you've ever pasted an nsec into a profile field, **generate a new key pair immediately**.
+
+## Limitations
+
+This analysis covers 1,085 of 2,009 known relays over approximately 48 hours of synchronization. The actual number of exposed keys across the full network is likely higher. We search only for the literal string `nsec1` — keys in hexadecimal format or obfuscated in any way are not detected. Follower counts reflect the current state of the network, not the state at the time of the leak. Account lifespan calculations are based on the earliest and latest events in our archive, which may not correspond to the account's true creation date. The self-leak exclusion filter is conservative: it removes all keys published by the account itself, including accidental self-leaks by users who are genuine victims of UX confusion.
 
 ## Methodology
 
-All data was collected by BigBrotr's Synchronizer service over two days of continuous operation, archiving events from 1,079 relays using cursor-based pagination with binary-split windowing. The analysis was performed against a PostgreSQL database containing over 40 million events.
+All data was collected by BigBrotr's Synchronizer service, archiving events from 1,085 relays using cursor-based pagination with binary-split windowing. nsec validation was performed using the `nostr-sdk` Python library. Follower counts were computed from the latest Kind 3 (contact list) event per pubkey. Profile data was extracted from the latest Kind 0 event. Recent activity was defined as any event published in the last 90 days. The 40 active at-risk accounts were manually inspected via their public profiles.
 
-nsec validation was performed using the `nostr-sdk` Python library — each candidate string was parsed and checked against the secp256k1 curve. Follower counts were computed from the latest Kind 3 (contact list) event per pubkey, counting how many contact lists contain each leaked pubkey in their `p` tags.
-
-The full dataset (nsec strings, pubkeys, event counts, follower counts, leak categories, and source events) is available for researchers upon request.
+The full dataset is available for researchers upon request.
