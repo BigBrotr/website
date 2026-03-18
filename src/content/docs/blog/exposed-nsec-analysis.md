@@ -58,13 +58,11 @@ A "real identity at risk" is defined as: at least 10 followers, a profile with a
 
 **38 accounts are actively using a compromised key with no visible signs of awareness.** They collectively have over **21,000 followers**. Two additional accounts show clear signs of unauthorized use (profile defaced, spam content).
 
-The 2.7% figure is itself inflated by the bot. When we exclude bot-generated keys, **35% of organically leaked keys** belong to accounts with at least one follower:
+## Who Leaked the Keys?
 
-![What fraction of leaked keys have social presence — all keys vs non-bot keys](../../../assets/blog/exposed-nsec/fig_05_follower_cdf.png)
+Excluding the bot, 1,314 organically leaked keys remain. Two questions matter: **who published them**, and **how**.
 
-## Self-Leak vs Third-Party
-
-Excluding the bot, who published the remaining 1,314 organically leaked keys?
+### Authorship
 
 | Authorship | Keys | % of keys | Followers exposed | % of followers |
 |------------|-----:|----------:|------------------:|---------------:|
@@ -73,13 +71,17 @@ Excluding the bot, who published the remaining 1,314 organically leaked keys?
 
 The split is nearly even by key count — **56% self-leak, 44% third-party.** But the follower distribution is heavily skewed: third-party leaks account for **70% of all follower exposure**, because they disproportionately target accounts with social presence. Self-leaks are mostly users pasting their nsec into a profile field, confusing it with their npub — typically new accounts with few followers.
 
-## Leak Vectors: Key Count vs Social Reach
+### Leak vectors weighted by social reach
 
-Within the vector breakdown, the same inversion occurs:
+![By key count vs by follower exposure](../../../assets/blog/exposed-nsec/fig_02_categories.png)
 
-![By key count vs by follower exposure — two completely different pictures](../../../assets/blog/exposed-nsec/fig_02_categories.png)
+By follower exposure — the metric that actually matters — profile-field leaks dominate at 74%. The real damage is done by users who accidentally pasted their nsec into a profile field. Smaller categories include nsec strings in contact list relay fields, bare nsec posts, and AI agents publishing credentials in operational logs.
 
-By key count, the Mr.nsec bot dominates at 92%. By follower exposure — the metric that actually matters — profile-field leaks dominate at 74%. The bot republished thousands of keys, but they belonged to accounts with near-zero social presence. The real damage is done by users who accidentally pasted their nsec into a profile field. Smaller categories include AI agents publishing credentials in operational logs, nsec strings in contact list relay fields, and bare nsec posts.
+### How many leaked keys have social presence?
+
+When we exclude bot-generated keys, **35% of organically leaked keys** belong to accounts with at least one follower:
+
+![Follower distribution — all keys vs non-bot keys](../../../assets/blog/exposed-nsec/fig_05_follower_cdf.png)
 
 ## The Organic Leak Rate
 
