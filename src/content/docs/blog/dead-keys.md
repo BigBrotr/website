@@ -8,17 +8,17 @@ tags:
   - nostr
   - security
   - nip
-description: We found 38 Nostr accounts actively using a leaked private key. Now everyone is asking the same question — once a key is out, how do you warn the network permanently? We examined every existing mechanism in the protocol, and none of them work.
-excerpt: We found 38 Nostr accounts actively using a leaked private key. Now everyone is asking the same question — once a key is out, how do you warn the network permanently? We examined every existing mechanism in the protocol, and none of them work.
+description: Once a Nostr private key leaks, how do you mark the identity as dead — permanently, verifiably, and in a way the attacker cannot undo? We examined every existing mechanism in the protocol. None of them work. Here is what could.
+excerpt: Once a Nostr private key leaks, how do you mark the identity as dead — permanently, verifiably, and in a way the attacker cannot undo? We examined every existing mechanism in the protocol. None of them work. Here is what could.
 ---
 
-Our previous post — *[Uncovering Exposed Private Keys Across the Nostr Network](/blog/exposed-nsec-analysis/)* — generated more discussion than we expected. The data got attention, but the question that kept coming up wasn't about the numbers. It was about what comes next.
+Once a Nostr private key leaks, how do you mark the identity as dead?
 
-**Once a key is publicly known, how do you mark it as dead?**
+Not temporarily. Not probabilistically. *Permanently* — in a way the attacker cannot undo, and that every client on the network can verify.
 
-This turns out to be a harder problem than it looks. We went through every mechanism currently available in the protocol. None of them fully solve it. Here is why — and what could actually work.
+We went through every mechanism currently available in the protocol. None of them solve it. Here is why — and what could actually work.
 
-A note before we start: this article is about *remediation* — what to do after a key has already leaked. Prevention is a separate problem, and one with a good existing answer. NIP-46 (Nostr Connect) allows users to delegate signing to a remote bunker without ever exposing the raw `nsec` to a client. If you are reading this and your key has not been compromised, NIP-46 is the thing to adopt. But for the 38 accounts in our dataset, prevention has already failed. The question is what happens now.
+This article is about *remediation* — what to do after a key has already leaked. Prevention is a separate problem with a good existing answer: NIP-46 (Nostr Connect) lets users delegate signing to a remote bunker without ever exposing the raw `nsec`. If your key has not been compromised, adopt NIP-46. But for accounts already operating on a leaked key — like the [38 we identified in our nsec exposure analysis](/blog/exposed-nsec-analysis/) — prevention has already failed. The question is what happens now.
 
 ---
 
