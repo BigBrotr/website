@@ -9,7 +9,7 @@ export default defineConfig({
       title: "BigBrotr",
       favicon: "/favicon.png",
       logo: {
-        src: "./src/assets/logo.webp",
+        src: "./src/assets/avatar.webp",
         replacesTitle: true,
       },
       social: [
